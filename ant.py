@@ -2,25 +2,28 @@ import math
 import numpy as np
 from pyglet.shapes import Circle
 
+import conf as c
+
 class Ant:
-    def __init__(self,win_size,pos=None,vel=None,batch=None,size=1,base_speed=8):
+    def __init__(self,win_size,pos=None,vel=None,batch=None,size=1):
         self.pos=pos
         self.vel=vel
         self.size=size
-        self.radius=(81*self.size)**(.5)
+        self.radius=(c.ant_base_area*self.size)**(.5)
         self.win_size=win_size
+        self.circ=Circle(*self.pos,(c.ant_base_area*self.size)**(.5),
+                         color=c.ant_color,batch=batch)
 
-        self.circ=Circle(*self.pos,(81*self.size)**(.5),color=(100,100,200),batch=batch)
 
     def update(self, acceleration=np.array([0,0])):
-        self.vel*=(.96-self.size/200) #air drag
+        self.vel*=(1-c.exp_decay-self.size*c.size_dep_exp_vel_decay) #air drag
         self.vel+=acceleration
         self.pos+=self.vel
         if not 0<=self.pos[0]<=self.win_size[0]:
             self.vel[0]*=-1
         if not 0<=self.pos[1]<=self.win_size[1]:
             self.vel[1]*=-1
-        self.circ.position=tuple(self.pos)
+        self.circ.position=self.coords()
 
 
     def absorb(self,ant):
@@ -34,9 +37,5 @@ class Ant:
         ant.circ.delete() #delete absorbed ant
 
 
-#    def draw(self):
-#        Circle(*self.pos,8+self.size,color=(100,100,200)).draw()
-
-    
     def coords(self):
         return tuple(self.pos)
