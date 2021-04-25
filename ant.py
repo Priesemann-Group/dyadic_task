@@ -11,8 +11,7 @@ class Ant:
         self.size=size
         self.radius=(c.ant_base_area*self.size)**(.5)
         self.win_size=win_size
-        self.circ=Circle(*self.pos,(c.ant_base_area*self.size)**(.5),
-                         color=c.ant_color,batch=batch)
+        self.circ=Circle(*self.pos,self.radius,color=c.ant_color,batch=batch)
 
 
     def update(self, acceleration=np.array([0,0])):
@@ -31,7 +30,7 @@ class Ant:
         self.pos=(self.size*self.pos+ant.size*ant.pos)/s
         self.vel=(self.size*self.vel+ant.size*ant.vel)/s
         self.size=s
-        self.radius=(81*self.size)**(.5)
+        self.radius=(c.ant_base_area*self.size)**(.5)
         self.circ.position=tuple(self.pos)
         self.circ.radius=self.radius
         ant.circ.delete() #delete absorbed ant

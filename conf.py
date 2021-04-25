@@ -12,3 +12,5 @@ ant_base_area=81
 ant_color=(100,100,200)
 size_dep_exp_vel_decay=.005
 exp_decay=.05
+field_size=(1920,1080)
+
