@@ -13,19 +13,23 @@ import ui
 
 rec_packets = Queue()
         
-class MulticastClient(DatagramProtocol):
+class UdpClient(DatagramProtocol):
     def startProtocol(self):
         """
         Called after protocol has started listening.
         """
-        # Set the TTL>1 so multicast will cross router hops:
-        self.transport.setTTL(5)
-        # Join a specific multicast group:
-        self.transport.joinGroup("228.0.0.5")
+        host = "134.76.24.227"
+        port = 8767
+        
+        self.transport.connect(host, port)
+        self.transport.write(b"hello")
 
     def datagramReceived(self, datagram, address):
         packet=pickle.loads(datagram)
         rec_packets.put(packet)
+    
+    def connectionRefused(self):
+        print("No one listening")
 
      
 def consume_packet(dx):
@@ -47,10 +51,10 @@ def consume_packet(dx):
             ui.circles[i].radius=0.
 
 
-reactor.listenMulticast(9999, MulticastClient(), listenMultiple=True)
+reactor.listenUDP(0, UdpClient())#, listenMultiple=True)
 Thread(target=reactor.run,
         kwargs={"installSignalHandlers": False}, 
         ).start()
 
-ui.schedule_interval(consume_packet, 10**-3)
+ui.schedule_interval(consume_packet, 2**-8)
 ui.run()

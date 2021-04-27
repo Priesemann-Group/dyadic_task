@@ -46,32 +46,35 @@ def main():
             update()
     
 
-class MulticastServer(DatagramProtocol):
+class Server(DatagramProtocol):
+    
+    player_1_addr=None
+
     def startProtocol(self):
         """
         Called after protocol has started listening.
         """
         # Set the TTL>1 so multicast will cross router hops:
-        self.transport.setTTL(5)
+        #self.transport.setTTL(5)
         # Join a specific multicast group:
-        self.transport.joinGroup("228.0.0.5")
+        #self.transport.joinGroup("228.0.0.5")
 
         main()
 
     def datagramReceived(self, datagram, address):
+        player_1_addr=address
         print("Datagram {} received from {}".format(repr(datagram), repr(address)))
-        if datagram == b"Client: Ping" or datagram == "Client: Ping":
+        #if datagram == b"Client: Ping" or datagram == "Client: Ping":
             # Rather than replying to the group multicast address, we send the
             # reply directly (unicast) to the originating port:
-            self.transport.write(b"Server: Pong", address)
+        #    self.transport.write(b"Server: Pong", address)
 
 
     def send_ants(self, ant_pos, ant_rad):
-        if ant_pos is not None and ant_rad is not None:
+        if ant_pos is not None and player_1_addr is not None:
             out=pickle.dumps(np.column_stack((ant_pos, ant_rad)))
-            self.transport.write(out, ("228.0.0.5", 9999))
+            self.transport.write(out, player_1_addr)
 
 
-server = MulticastServer()
-reactor.listenMulticast(9999, server, listenMultiple=True)
+reactor.listenUDP(8767, Server(), listenMultiple=True)
 reactor.run()
