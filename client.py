@@ -6,7 +6,7 @@ from threading import Thread
 import numpy as np
 import pickle
 
-#import conf as c
+import conf as c
 from queue import Queue
 
 import ui
@@ -18,10 +18,7 @@ class UdpClient(DatagramProtocol):
         """
         Called after protocol has started listening.
         """
-        host = "134.76.24.227"
-        port = 8767
-        
-        self.transport.connect(host, port)
+        self.transport.connect(c.server_ip, c.server_port)
         self.transport.write(b"hello")
 
     def datagramReceived(self, datagram, address):
@@ -51,7 +48,7 @@ def consume_packet(dx):
             ui.circles[i].radius=0.
 
 
-reactor.listenUDP(0, UdpClient())#, listenMultiple=True)
+reactor.listenUDP(0, UdpClient())
 Thread(target=reactor.run,
         kwargs={"installSignalHandlers": False}, 
         ).start()

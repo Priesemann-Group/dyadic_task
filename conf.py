@@ -16,6 +16,9 @@ size_dep_exp_vel_decay=.005
 exp_decay=.05
 field_size=(1920,1080)
 
+server_ip="134.76.24.227"
+server_port=8767
+
 #CHOOSEN SERVER PORTS
 #8766 - UDP - weltweit
 #8767 - UDP - weltweit
