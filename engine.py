@@ -24,6 +24,9 @@ attractors = [np.array([0,0],dtype='float64')]*2
 def gaussian(x,mu=0.,sig=float(c.field_size[0]/2)):
     return 1./(np.sqrt(2.*np.pi)*sig)*np.exp(-np.power((x-mu)/sig,2.)/2)
 
+@njit
+def euclid_dist(vec):
+    return (vec[0]**2+vec[1]**2)**.5
 
 @njit
 def absorb_calc(ants,radians):
@@ -37,7 +40,7 @@ def absorb_calc(ants,radians):
         if absorber[0]!=-42:
             for i,ant in enumerate(ants[absorber_idx+1:]):
                 if ant[0]!=-42:
-                    dist=np.linalg.norm(ant-absorber)
+                    dist=euclid_dist(ant-absorber)
                     if dist < radians[absorber_idx]+radians[i+1+absorber_idx]:
                         eater[meal_count]=absorber_idx
                         food[meal_count]=i+1+absorber_idx
@@ -57,7 +60,7 @@ def collision_calc(ants,radians):
         if current_ant[0]!=-42:
             for k,ant in enumerate(ants[i+1:]):
                 if ant[0]!=-42:
-                    dist=np.linalg.norm(ant-current_ant)
+                    dist=euclid_dist(ant-current_ant)
                     if dist < radians[i]+radians[k+1+i]:
                         colls[coll_count]=np.array([i,k+i+1])
                         coll_count+=1
@@ -72,7 +75,7 @@ def accelerations_calc(ants, attractors):
         acc = np.array([0,0],dtype='float64')
         for atr in attractors:
             vec=atr-ant
-            dist=np.linalg.norm(vec)
+            dist=euclid_dist(vec)
             acc+=vec*gaussian(dist)/dist/gaussian(0.)
         accs[i]=acc
     return accs
@@ -81,7 +84,7 @@ def accelerations_calc(ants, attractors):
 @njit
 def shot(pos,ants,radians):
     for i,ant in enumerate(ants):
-        dist=np.linalg.norm(ant-pos)
+        dist=euclid_dist(ant-pos)
         if dist < radians[i]:
             return i
 
@@ -90,6 +93,7 @@ def load():
     absorb_calc(np.array([(42.,42.),(1.,1.)]),np.array([[42.],[42.]]))
     collision_calc(np.array([(42.,42.),(1.,1.)]),np.array([[42.],[42.]]))
     gaussian(0.)
+    euclid_dist(np.array([0,0]))
     accelerations_calc(np.array([(42.,42.),(1.,1.)]), np.array(attractors))
     shot(np.array((0,0)),np.array([(42.,42.),(1.,1.)]),np.array(([42.],[42.])))
     #spawn ants
