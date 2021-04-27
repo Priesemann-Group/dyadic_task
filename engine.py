@@ -1,34 +1,17 @@
 import random as r
 import numpy as np
 from numba import njit
+import pickle
 
-from pyglet import clock
-from pyglet.app import run
-from pyglet.window import Window
-from pyglet.shapes import Circle, Rectangle
-from pyglet.graphics import Batch
-from pyglet.text import Label
+#from pyglet import clock
+#from pyglet.app import run
 
 from ant import Ant
 import conf as c
 
-win = Window()
-label_batch = Batch()
-ant_batch = Batch()
-caught_label = Label(
-        font_name=c.font_name,
-        font_size=c.font_size,
-        color=c.label_color,
-        x=0, y=0,
-        batch=label_batch)
-fps_label = Label(
-        font_name=c.font_name,
-        font_size=c.font_size,
-        color=c.label_color,
-        x=0, y=win.get_size()[1]-c.font_size,
-        batch=label_batch)
-background = Rectangle(0,0,*win.get_size(),color=c.background_color)
-mouse_circle = Circle(0,0,c.mouse_circle_radius,color=c.mouse_circle_color)
+from twisted.internet.protocol import DatagramProtocol
+from twisted.internet import reactor
+
 
 targets = []
 catch_count= 0
@@ -38,7 +21,7 @@ attractors = [np.array([0,0],dtype='float64')]*2
 
 
 @njit
-def gaussian(x,mu=0.,sig=float(win.get_size()[0]/2)):
+def gaussian(x,mu=0.,sig=float(c.field_size[0]/2)):
     return 1./(np.sqrt(2.*np.pi)*sig)*np.exp(-np.power((x-mu)/sig,2.)/2)
 
 
@@ -63,6 +46,24 @@ def absorb_calc(ants,radians):
         absorber_idx+=1
     return eater, food
 
+@njit
+def collision_calc(ants,radians):
+    i = 0
+    coll_count=0
+    colls=np.array([[-1,-1]]*len(ants))
+
+    while(i<len(ants)):
+        current_ant=ants[i]
+        if current_ant[0]!=-42:
+            for k,ant in enumerate(ants[i+1:]):
+                if ant[0]!=-42:
+                    dist=np.linalg.norm(ant-current_ant)
+                    if dist < radians[i]+radians[k+1+i]:
+                        colls[coll_count]=np.array([i,k+i+1])
+                        coll_count+=1
+                        ants[k+1+i]=(-42,-42)
+        i+=1
+    return list(colls)
 
 @njit
 def accelerations_calc(ants, attractors):
@@ -84,8 +85,20 @@ def shot(pos,ants,radians):
         if dist < radians[i]:
             return i
 
+def load():
+    #to run njit compiler - this causes the initial loading time
+    absorb_calc(np.array([(42.,42.),(1.,1.)]),np.array([[42.],[42.]]))
+    collision_calc(np.array([(42.,42.),(1.,1.)]),np.array([[42.],[42.]]))
+    gaussian(0.)
+    accelerations_calc(np.array([(42.,42.),(1.,1.)]), np.array(attractors))
+    shot(np.array((0,0)),np.array([(42.,42.),(1.,1.)]),np.array(([42.],[42.])))
+    #spawn ants
+    for _ in range(c.ant_amount):
+        add_rand_ant()
 
 def ant_posistions():
+    if not targets:
+        return None
     out=np.array([targets[0].pos])
     for i in range(1,len(targets)):
         out=np.vstack((out,np.array([targets[i].pos])))
@@ -93,22 +106,30 @@ def ant_posistions():
 
 
 def ant_radians():
+    if not targets:
+        return None
     out=np.array([targets[0].radius])
     for i in range(1,len(targets)):
         out=np.vstack((out,np.array([targets[i].radius])))
     return out
 
 
-def add_ant(x,y,angle):
+def add_ant(x,y,angle,size=1):
     pos=np.array([x,y],dtype='float64')
     vel=np.array([np.cos(angle),np.sin(angle)])*c.start_velocity
-    ant=Ant(win.get_size(),pos,vel,batch=ant_batch)
+    ant=Ant(c.field_size,pos,vel,size=size)
     targets.append(ant)
 
+def add_rand_ant():
+    x,y=r.randrange(c.field_size[0]),r.randrange(c.field_size[1])
+    angle=r.uniform(0.,np.pi*2)
+    size=r.randrange(10)
+    add_ant(x,y,angle,size)
 
-def add_ants(dt):
+
+def pendelum_ant_jets():
     global angle_pendulum
-    width, height = win.get_size()
+    width, height = c.field_size
 
     angle=np.pi/2*np.sin(np.pi*angle_pendulum/20)-np.pi/4
     add_ant(0,height/2,angle)
@@ -120,10 +141,12 @@ def add_ants(dt):
     angle_pendulum%=20
 
 
-def update(dt):
-    if len(targets)==0:
-        return
-   
+def add_ants(dt): #TODO insert ants after time?
+    #pendelum_ant_jets()
+    pass 
+
+
+def absorb():
     eater,food = absorb_calc(ant_posistions(),ant_radians())
     for e,f in zip(eater,food):
         if e==-1:
@@ -134,61 +157,42 @@ def update(dt):
             break
         del targets[f]
 
+def attract():
     accelerations = accelerations_calc(ant_posistions(), np.array(attractors))
     for i,ant in enumerate(targets):
         ant.update(accelerations[i])
 
+def collide():
+    colls = collision_calc(ant_posistions(),ant_radians())
+    for i, k in colls:
+        if i==-1:
+            break
+        targets[i].collide(targets[k])
+
+
+import time
+update_t = 0
+def update(dt):
+    if len(targets)==0:
+        return
+    #absorb()
+    #attract()
+    global update_t
+    t0 = time.time()
+    collide()
+    for ant in targets:
+        ant.update()
+    t = time.time()-t0
+    if t>update_t:
+        update_t=t
+        return update_t
+
+
 
 def switch_attractors(dt=None):
     global current_atr
-    width, height = win.get_size()
+    width, height = c.field_size
 
     current_atr=(current_atr+1)%len(attractors)
     attractors[current_atr]=np.array([r.randrange(width),r.randrange(height)],
             dtype='float64')
-
-
-@win.event
-def on_draw():
-    global catch_count 
-    global current_atr
-
-    win.clear()
-
-    if current_atr==-1: #Randomize initial attractors
-        switch_attractors()
-        switch_attractors()
-        current_atr+=1
-
-    caught_label.text=f'Ants caught: {catch_count}'
-    fps_label.text=f'FPS: {clock.get_fps()}'
-    fps_label.y=win.get_size()[1]-c.font_size
-    background.width, background.height = win.get_size()
-
-    background.draw()
-    ant_batch.draw()
-    mouse_circle.draw()
-    label_batch.draw()
-
-
-@win.event
-def on_mouse_press(x, y, scroll_x, scroll_y):
-    mouse_circle.position=(x,y)
-    i = shot(np.array((x,y)),ant_posistions(),ant_radians())
-    global catch_count
-    if i is not None:
-        catch_count+=targets[i].size
-        del targets[i]
-
-
-#to run njit compiler - this causes the initial loading time
-absorb_calc(np.array([(42.,42.),(1.,1.)]),np.array([[42.],[42.]]))
-gaussian(0.)
-accelerations_calc(np.array([(42.,42.),(1.,1.)]), np.array(attractors))
-shot(np.array((0,0)),np.array([(42.,42.),(1.,1.)]),np.array(([42.],[42.])))
-
-clock.schedule_interval(add_ants, 1/c.spawns_ps)
-clock.schedule_interval(update, 1/c.pos_updates_ps)
-clock.schedule_interval(switch_attractors, 1/c.attractor_tele_ps)
-
-run()
