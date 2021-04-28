@@ -131,7 +131,7 @@ def add_rand_ant():
     add_ant(x,y,angle,size)
 
 
-def pendelum_ant_jets():
+def pendelum_ant_jets(): #TODO unused
     global angle_pendulum
     width, height = c.field_size
 
@@ -150,7 +150,7 @@ def add_ants(dt): #TODO insert ants after time?
     pass 
 
 
-def absorb():
+def absorb(): #TODO unused
     eater,food = absorb_calc(ant_posistions(),ant_radians())
     for e,f in zip(eater,food):
         if e==-1:
@@ -161,7 +161,7 @@ def absorb():
             break
         del targets[f]
 
-def attract():
+def attract(): #TODO unused
     accelerations = accelerations_calc(ant_posistions(), np.array(attractors))
     for i,ant in enumerate(targets):
         ant.update(accelerations[i])
@@ -193,7 +193,7 @@ def update(dt):
 
 
 
-def switch_attractors(dt=None):
+def switch_attractors(dt=None): #TODO unused
     global current_atr
     width, height = c.field_size
 
