@@ -49,7 +49,6 @@ class Server(DatagramProtocol):
     def check_player_contact(self):
         t = time.time()
         for i, lc in enumerate(self.player_last_contact):
-            print(lc)
             if t-lc > 15:
                 self.player_last_contact[i] = -1.
                 e.score[i] = 0
