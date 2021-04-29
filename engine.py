@@ -1,202 +1,165 @@
+import time
+import conf as c
 import random as r
 import numpy as np
 from numba import njit
-import pickle
 
-#from pyglet import clock
-#from pyglet.app import run
+pos = np.full((c.ant_amount, 2), np.nan, dtype='float64')
+vel = np.full((c.ant_amount, 2), np.nan, dtype='float64')
+rad = np.full(c.ant_amount, np.nan, dtype='float64')
 
-from ant import Ant
-import conf as c
+score = [0, 0]
 
-from twisted.internet.protocol import DatagramProtocol
-from twisted.internet import reactor
-
-
-targets = []
-catch_count= 0
-current_atr= -1
-angle_pendulum= 0
-attractors = [np.array([0,0],dtype='float64')]*2
-
-
-@njit
-def gaussian(x,mu=0.,sig=float(c.field_size[0]/2)):
-    return 1./(np.sqrt(2.*np.pi)*sig)*np.exp(-np.power((x-mu)/sig,2.)/2)
 
 @njit
 def euclid_dist(vec):
-    return (vec[0]**2+vec[1]**2)**.5
+    return (vec[0] ** 2 + vec[1] ** 2) ** .5
+
 
 @njit
-def absorb_calc(ants,radians):
-    absorber_idx = 0
-    meal_count=0
-    eater=np.array([-1]*len(ants))
-    food=np.array([-1]*len(ants))
+def collision_calc(ants, radians):
+    coll_count = 0
+    colls = np.array([[-1, -1]] * len(ants))
+    already_calculated = [False] * len(ants)  # TODO resize?
 
-    while(absorber_idx<len(ants)):
-        absorber=ants[absorber_idx]
-        if absorber[0]!=-42:
-            for i,ant in enumerate(ants[absorber_idx+1:]):
-                if ant[0]!=-42:
-                    dist=euclid_dist(ant-absorber)
-                    if dist < radians[absorber_idx]+radians[i+1+absorber_idx]:
-                        eater[meal_count]=absorber_idx
-                        food[meal_count]=i+1+absorber_idx
-                        meal_count+=1
-                        ants[i+1+absorber_idx] = (-42,-42)
-        absorber_idx+=1
-    return eater, food
-
-@njit
-def collision_calc(ants,radians):
-    i = 0
-    coll_count=0
-    colls=np.array([[-1,-1]]*len(ants))
-
-    while(i<len(ants)):
-        current_ant=ants[i]
-        if current_ant[0]!=-42:
-            for k,ant in enumerate(ants[i+1:]):
-                if ant[0]!=-42:
-                    dist=euclid_dist(ant-current_ant)
-                    if dist < radians[i]+radians[k+1+i]:
-                        colls[coll_count]=np.array([i,k+i+1])
-                        coll_count+=1
-                        ants[k+1+i]=(-42,-42)
-        i+=1
+    for i in range(len(ants)):
+        for k in range(i + 1, len(ants)):
+            if not already_calculated[k]:
+                dist = euclid_dist(ants[k] - ants[i])
+                if dist < radians[i] + radians[k]:
+                    already_calculated[k] = True
+                    colls[coll_count] = np.array([i, k])
+                    coll_count += 1
     return list(colls)
 
-@njit
-def accelerations_calc(ants, attractors):
-    accs=np.zeros_like(ants)
-    for i,ant in enumerate(ants):
-        acc = np.array([0,0],dtype='float64')
-        for atr in attractors:
-            vec=atr-ant
-            dist=euclid_dist(vec)
-            acc+=vec*gaussian(dist)/dist/gaussian(0.)
-        accs[i]=acc
-    return accs
-
-
-@njit
-def shot(pos,ants,radians):
-    for i,ant in enumerate(ants):
-        dist=euclid_dist(ant-pos)
-        if dist < radians[i]:
-            return i
 
 def load():
-    #to run njit compiler - this causes the initial loading time
-    absorb_calc(np.array([(42.,42.),(1.,1.)]),np.array([[42.],[42.]]))
-    collision_calc(np.array([(42.,42.),(1.,1.)]),np.array([[42.],[42.]]))
-    gaussian(0.)
-    euclid_dist(np.array([0,0]))
-    accelerations_calc(np.array([(42.,42.),(1.,1.)]), np.array(attractors))
-    shot(np.array((0,0)),np.array([(42.,42.),(1.,1.)]),np.array(([42.],[42.])))
-    #spawn ants
-    for _ in range(c.ant_amount):
+    global pos, vel, rad
+    collision_calc(pos, rad)
+    euclid_dist(np.array([0, 0]))
+
+    for _ in range(c.ant_amount):  # TODO
         add_rand_ant()
 
-def ant_posistions():
-    if not targets:
-        return None
-    out=np.array([targets[0].pos])
-    for i in range(1,len(targets)):
-        out=np.vstack((out,np.array([targets[i].pos])))
-    return out
 
+def add_ant(x, y, angle, radius=None):
+    if not radius:  # TODO del this
+        radius = r.uniform(c.min_radius, c.max_radius)
+    global pos, vel
+    i = np.where(np.isnan(pos[:, 0]))[0][0]  # Assumption: There is always at least one nan!
+    pos[i] = np.array([x, y], dtype='float64')
+    vel[i] = np.array([np.cos(angle), np.sin(angle)]) * c.start_velocity
+    rad[i] = radius
 
-def ant_radians():
-    if not targets:
-        return None
-    out=np.array([targets[0].radius])
-    for i in range(1,len(targets)):
-        out=np.vstack((out,np.array([targets[i].radius])))
-    return out
-
-
-def add_ant(x,y,angle,size=1):
-    pos=np.array([x,y],dtype='float64')
-    vel=np.array([np.cos(angle),np.sin(angle)])*c.start_velocity
-    ant=Ant(c.field_size,pos,vel,size=size)
-    targets.append(ant)
 
 def add_rand_ant():
-    x,y=r.randrange(c.field_size[0]),r.randrange(c.field_size[1])
-    angle=r.uniform(0.,np.pi*2)
-    size=r.randrange(10)
-    add_ant(x,y,angle,size)
+    x, y = r.randrange(c.field_size[0]), r.randrange(c.field_size[1])
+    radius = r.uniform(c.min_radius, c.max_radius)
+    proposed_pos = np.array([x, y])
+    is_valid = True
+    while is_valid:  # randomize until no collision to other points.
+        is_valid = False
+        for i in range(len(pos)):
+            if not np.isnan(pos[i][0]):
+                dist = euclid_dist(pos[i] - proposed_pos)
+                if dist < rad[i] + radius:
+                    x, y = r.randrange(c.field_size[0]), r.randrange(c.field_size[1])
+                    radius = r.uniform(c.min_radius, c.max_radius)
+                    proposed_pos = np.array([x, y])
+                    is_valid = True
+                    break
+    angle = r.uniform(0., np.pi * 2)
+    add_ant(x, y, angle)
 
 
-def pendelum_ant_jets(): #TODO unused
-    global angle_pendulum
-    width, height = c.field_size
-
-    angle=np.pi/2*np.sin(np.pi*angle_pendulum/20)-np.pi/4
-    add_ant(0,height/2,angle)
-    add_ant(width/2,0,angle+np.pi/2)
-    add_ant(width,height/2,angle+np.pi)
-    add_ant(width/2,height,angle+np.pi*3/2)
-
-    angle_pendulum+=1
-    angle_pendulum%=20
+def rad_to_area(i):
+    return np.pi * rad[i] ** 2
 
 
-def add_ants(dt): #TODO insert ants after time?
-    #pendelum_ant_jets()
-    pass 
+def collision_next_iter(i, k):
+    global pos, vel
+    return euclid_dist((pos[i] - vel[i]) - (pos[k] - vel[k])) < rad[i] + rad[k]
 
 
-def absorb(): #TODO unused
-    eater,food = absorb_calc(ant_posistions(),ant_radians())
-    for e,f in zip(eater,food):
-        if e==-1:
-            break
-        targets[e].absorb(targets[f])
-    for f in sorted(food, reverse=True):
-        if f==-1:
-            break
-        del targets[f]
+collided_last_iter = []
 
-def attract(): #TODO unused
-    accelerations = accelerations_calc(ant_posistions(), np.array(attractors))
-    for i,ant in enumerate(targets):
-        ant.update(accelerations[i])
 
-def collide():
-    colls = collision_calc(ant_posistions(),ant_radians())
+def collisions():
+    global pos, vel
+    colls = collision_calc(pos, rad)
     for i, k in colls:
-        if i==-1:
+        if i == -1:
             break
-        targets[i].collide(targets[k])
+        if tuple(sorted((i, k))) in collided_last_iter:
+            if collision_next_iter(i, k):
+                continue
+            else:
+                collided_last_iter.remove(tuple(sorted((i, k))))
+        area_i = rad_to_area(i)
+        area_k = rad_to_area(k)
+        joint_vel = (vel[i] * area_i + vel[k] * area_k) / (area_i + area_k)
+        vel[i] = 2 * joint_vel - vel[i]
+        vel[k] = 2 * joint_vel - vel[k]
+        if collision_next_iter(i, k):
+            collided_last_iter.append(tuple(sorted((i, k))))
 
 
-import time
-update_t = 0
+def correct_to_boundaries():
+    for i in range(len(pos)):
+        if not np.isnan(pos[i][0]):
+            if pos[i][0] < 0 + rad[i]:
+                pos[i][0] = 1 + rad[i]
+                vel[i][0] *= -1
+            elif pos[i][0] > c.field_size[0] - rad[i]:
+                pos[i][0] = c.field_size[0] - 1 - rad[i]
+                vel[i][0] *= -1
+            if pos[i][1] < 0 + rad[i]:
+                pos[i][1] = 1 + rad[i]
+                vel[i][1] *= -1
+            elif pos[i][1] > c.field_size[1] - rad[i]:
+                pos[i][1] = c.field_size[1] - 1 - rad[i]
+                vel[i][1] *= -1
+
+
 def update(dt):
-    if len(targets)==0:
-        return
-    #absorb()
-    #attract()
-    global update_t
-    t0 = time.time()
-    collide()
-    for ant in targets:
-        ant.update()
-    t = time.time()-t0
-    if t>update_t:
-        update_t=t
-        return update_t
+    global pos, vel
+    pos += vel
+    collisions()
+    correct_to_boundaries()
 
 
+target_idx = [-1, -1]
+target_occupation_date = [0., 0.]
 
-def switch_attractors(dt=None): #TODO unused
-    global current_atr
-    width, height = c.field_size
 
-    current_atr=(current_atr+1)%len(attractors)
-    attractors[current_atr]=np.array([r.randrange(width),r.randrange(height)],
-            dtype='float64')
+def get_target_state(mouse_positions):
+    out = [-1, -1]
+    for i, mouse_pos in enumerate(mouse_positions):
+        global target_idx, target_occupation_date
+        mouse_pos = np.array(mouse_pos)
+
+        if target_idx[i] != -1:  # mouse was on a target
+            dist = euclid_dist(pos[target_idx[i]] - mouse_pos)
+            if dist < rad[target_idx[i]]:  # mouse is still on the target
+                t = time.time()
+                if t > target_occupation_date[i]:  # occupied the target
+                    pos[target_idx[i]] = np.array([np.nan, np.nan])  # TODO
+                    add_rand_ant()
+                    target_idx[i] = -1
+                    target_occupation_date[i] = 0.
+                    out[i] = -1
+                    score[i] += 1
+                else:  # not occupied jet
+                    time_left = target_occupation_date[i] - t
+                    out[i] = target_idx[i] + time_left / c.time_to_occupy
+            else:  # mouse was on a target but lost it
+                target_idx[i] = -1
+                target_occupation_date[i] = 0.
+                out[i]
+        else:  # mouse was on no target, check if it is now
+            for k, p in enumerate(pos):
+                dist = euclid_dist(p - mouse_pos)
+                if dist < rad[k]:
+                    target_idx[i] = k
+                    target_occupation_date[i] = time.time() + c.time_to_occupy
+    return out

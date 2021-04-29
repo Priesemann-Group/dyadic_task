@@ -1,25 +1,29 @@
-ant_amount=20
-font_name='Arial'
-font_size=20
-label_color=(0,0,0,255)
-background_color=(255,255,255)
-margin_color=(0,0,0)
-start_velocity=6
-spawns_ps=5
-pos_updates_ps=80
-attractor_tele_ps=1
-mouse_circle_color=(100,100,100)
-mouse_circle_radius=5
-ant_base_area=81*2
-ant_color=(100,100,200)
-size_dep_exp_vel_decay=.005
-exp_decay=.05
-field_size=(1920,1080)
 
-server_ip="134.76.24.227"
-server_port=8767
+# Game config
+ant_amount = 10
+min_radius = 42
+max_radius = 60
+start_velocity = 3
+time_to_occupy = .5
 
-#CHOOSEN SERVER PORTS
-#8766 - UDP - weltweit
-#8767 - UDP - weltweit
-#8768 - UDP - weltweit
+# Appearance
+font_name = 'Arial'
+font_size = 20
+label_color = (0, 0, 0, 255)
+background_color = (255, 255, 255)
+margin_color = (0, 0, 0)
+mouse_circle_radius = 5
+mouse_circle_color = (100, 100, 100)
+opponent_circle_color = (200, 100, 100)
+ant_color = (100, 100, 200)
+
+# Server configs
+pos_updates_ps = 80
+field_size = (1920, 1080)
+server_ip = "134.76.24.227"
+server_port = 8767
+
+# CHOOSEN SERVER PORTS
+# 8766 - UDP - weltweit
+# 8767 - UDP - weltweit
+# 8768 - UDP - weltweit
