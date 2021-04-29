@@ -1,4 +1,5 @@
 import pickle
+import sys
 import ui
 import conf as c
 from twisted.internet.protocol import DatagramProtocol
@@ -15,8 +16,10 @@ class UdpClient(DatagramProtocol):
         """
         Called after protocol has started listening.
         """
-        # self.transport.connect(c.server_ip, c.server_port)
-        self.transport.connect('127.0.0.1', c.server_port)  # DEBUG
+        if len(sys.argv) == 2 and sys.argv[1] == 'local':
+            self.transport.connect('127.0.0.1', c.server_port)
+        else:
+            self.transport.connect(c.server_ip, c.server_port)
         self.transport.write(pickle.dumps((0, 0)))
 
     def send_mouse_pos(self, pos):
