@@ -161,7 +161,6 @@ def set_target_states(target_states):  # Called after set_ants()
                                        c.player_colors[i][2] + (255 - c.player_colors[i][2]) * (1 - progress))
         else:
             target_circles[i].position = (-1000, -1000)
-            target_circles[i].radius = 1
 
 
 def run():

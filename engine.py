@@ -17,6 +17,25 @@ def euclid_dist(vec):
 
 
 @njit
+def gaussian(x, mu=0., sig=c.max_radius*1.5):
+    return 1. / (np.sqrt(2. * np.pi) * sig) * np.exp(-np.power((x - mu) / sig, 2.) / 2)
+
+
+@njit
+def accelerations_calc(ant_positions):
+    accelerations = np.zeros_like(ant_positions)
+    if not np.isnan(np.sum(ant_positions)):
+        for i, current_ant in enumerate(ant_positions):
+            for other_ant in ant_positions:
+                vec = current_ant - other_ant
+                dist = euclid_dist(vec)
+                acc = vec * gaussian(dist) / dist / gaussian(0.)
+                if not np.isnan(np.sum(acc)):
+                    accelerations[i] += acc
+    return accelerations
+
+
+@njit
 def collision_calc(ants, radians):
     coll_count = 0
     colls = np.array([[-1, -1]] * len(ants))
@@ -35,9 +54,10 @@ def collision_calc(ants, radians):
 
 def load():
     global pos, vel, rad
-    collision_calc(pos, rad)
+    #collision_calc(pos, rad)
+    accelerations_calc(pos)
     euclid_dist(np.array([0, 0]))
-
+    gaussian(0.)
     for _ in range(c.ant_amount):  # TODO
         add_rand_ant()
 
@@ -48,7 +68,7 @@ def add_ant(x, y, angle, radius=None):
     global pos, vel
     i = np.where(np.isnan(pos[:, 0]))[0][0]  # Assumption: There is always at least one nan!
     pos[i] = np.array([x, y], dtype='float64')
-    vel[i] = np.array([np.cos(angle), np.sin(angle)]) * c.start_velocity
+    vel[i] = np.array([np.cos(angle), np.sin(angle)]) * c.velocity
     rad[i] = radius
 
 
@@ -123,8 +143,13 @@ def correct_to_boundaries():
 
 def update(dt):
     global pos, vel
+    acc = accelerations_calc(pos)
+    vel += acc
+    for v in vel:
+        v /= euclid_dist(v)
+        v *= c.velocity
     pos += vel
-    collisions()
+    # collisions()
     correct_to_boundaries()
 
 
@@ -155,7 +180,6 @@ def get_target_state(mouse_positions):
             else:  # mouse was on a target but lost it
                 target_idx[i] = -1
                 target_occupation_date[i] = 0.
-                out[i]
         else:  # mouse was on no target, check if it is now
             for k, p in enumerate(pos):
                 dist = euclid_dist(p - mouse_pos)

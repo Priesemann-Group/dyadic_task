@@ -48,6 +48,8 @@ def consume_packet(dx):
         global player_number
         opponent_number = (player_number - 1) % 2
         target_states = [packet[0][2], packet[1][2]]
+        if player_number == 1:  # We are the second player
+            target_states.reverse()
         ui.scores = list(packet[2][:2].astype(int))
         packet *= ui.scale_factor  # scale positions as well as radians
         ui.player_mouse_circle.position = tuple(packet[player_number][:2] + ui.origin_coords)

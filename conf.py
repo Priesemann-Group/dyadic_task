@@ -3,7 +3,7 @@
 ant_amount = 10
 min_radius = 42
 max_radius = 60
-start_velocity = 3
+velocity = 3
 time_to_occupy = .5
 
 # Appearance
@@ -15,11 +15,8 @@ margin_color = (0, 0, 0)
 mouse_circle_radius = 5
 ant_color = (100, 100, 200)
 
-#player_color = (100, 100, 100)
-#opponent_color = (200, 100, 100)
-
 player_colors = [
-    (100, 200, 100),  # clients player color
+    (100, 100, 100),  # clients player color
     (200, 100, 100)   # opponents color
 ]
 
