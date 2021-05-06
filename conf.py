@@ -13,9 +13,15 @@ label_color = (0, 0, 0, 255)
 background_color = (255, 255, 255)
 margin_color = (0, 0, 0)
 mouse_circle_radius = 5
-mouse_circle_color = (100, 100, 100)
-opponent_circle_color = (200, 100, 100)
 ant_color = (100, 100, 200)
+
+#player_color = (100, 100, 100)
+#opponent_color = (200, 100, 100)
+
+player_colors = [
+    (100, 200, 100),  # clients player color
+    (200, 100, 100)   # opponents color
+]
 
 # Server configs
 pos_updates_ps = 80

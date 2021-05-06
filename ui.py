@@ -13,14 +13,21 @@ win = Window(resizable=True)
 circle_batch = Batch()
 label_batch = Batch()
 margin_batch = Batch()
-player_batch = Batch()
+mouse_batch = Batch()
+target_batch = Batch()
 
 background = Rectangle(0, 0, *win.get_size(), color=c.background_color)
 first_margin = Rectangle(0, 0, 1, 1, color=c.margin_color, batch=margin_batch)
 second_margin = Rectangle(0, 0, 1, 1, color=c.margin_color, batch=margin_batch)
 
-mouse_circle = Circle(0, 0, c.mouse_circle_radius, color=c.mouse_circle_color, batch=player_batch)
-opponent_circle = Circle(0, 0, c.mouse_circle_radius, color=c.opponent_circle_color, batch=player_batch)
+player_mouse_circle = Circle(0, 0, c.mouse_circle_radius, color=c.player_colors[0], batch=mouse_batch)  # TODO: to list
+opponent_mouse_circle = Circle(0, 0, c.mouse_circle_radius, color=c.player_colors[1], batch=mouse_batch)
+target_circles = [
+    Circle(-1000, -1000, 1, color=c.player_colors[0], batch=target_batch),  # For clients player
+    Circle(-1000, -1000, 1, color=c.player_colors[1], batch=target_batch)  # For opponent
+]
+#player_target_circle = Circle(-1000, -1000, 1, color=c.player_color, batch=target_batch)
+#opponent_target_circle = Circle(-1000, -1000, 1, color=c.opponent_color, batch=target_batch)
 
 fps_label = Label(
     font_name=c.font_name,
@@ -48,7 +55,7 @@ scale_factor = None
 client_field_size = win.get_size()
 origin_coords = np.array([0, 0])
 
-for i in range(c.ant_amount):
+for _ in range(c.ant_amount):
     circles.append(Circle(0,
                           0,
                           float(1),
@@ -120,7 +127,8 @@ def on_draw():
 
     background.draw()
     circle_batch.draw()
-    player_batch.draw()
+    target_batch.draw()
+    mouse_batch.draw()
     label_batch.draw()
     margin_batch.draw()
 
@@ -129,18 +137,8 @@ def schedule_interval(func, dt):
     pyglet.clock.schedule_interval(func, dt)
 
 
-def set_target_states(target_states):
-    for t_s in target_states:
-        if t_s > 0.:
-            idx = int(t_s)
-            progress = t_s - idx
-            circles[idx].color = (100 + 155 * (1 - progress),
-                                  100 + 155 * (1 - progress),
-                                  200 + 55 * (1 - progress))
-
-
 def set_ants(packet):
-    packet[:, :2] += origin_coords
+    packet[:, :2] += origin_coords  # pos to relative client pos
     for i, p in enumerate(packet):
         ant_pos, ant_rad = p[:2], p[2]
         circles[i].position = tuple(ant_pos)
@@ -149,6 +147,21 @@ def set_ants(packet):
     for i in range(len(packet), c.ant_amount):
         circles[i].position = (-1000, -1000)
         circles[i].radius = 0.
+
+
+def set_target_states(target_states):  # Called after set_ants()
+    for i, t_s in enumerate(target_states):
+        if t_s > 0.:
+            idx = int(t_s)
+            progress = t_s - idx
+            target_circles[i].position = circles[idx].position
+            target_circles[i].radius = circles[idx].radius * (1 - progress)
+            target_circles[i].color = (c.player_colors[i][0] + (255 - c.player_colors[i][0]) * (1 - progress),
+                                       c.player_colors[i][1] + (255 - c.player_colors[i][1]) * (1 - progress),
+                                       c.player_colors[i][2] + (255 - c.player_colors[i][2]) * (1 - progress))
+        else:
+            target_circles[i].position = (-1000, -1000)
+            target_circles[i].radius = 1
 
 
 def run():

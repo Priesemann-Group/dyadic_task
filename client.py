@@ -50,8 +50,8 @@ def consume_packet(dx):
         target_states = [packet[0][2], packet[1][2]]
         ui.scores = list(packet[2][:2].astype(int))
         packet *= ui.scale_factor  # scale positions as well as radians
-        ui.mouse_circle.position = tuple(packet[player_number][:2] + ui.origin_coords)
-        ui.opponent_circle.position = tuple(packet[opponent_number][:2] + ui.origin_coords)
+        ui.player_mouse_circle.position = tuple(packet[player_number][:2] + ui.origin_coords)
+        ui.opponent_mouse_circle.position = tuple(packet[opponent_number][:2] + ui.origin_coords)
         ui.set_ants(packet[3:])
         ui.set_target_states(target_states)
 
