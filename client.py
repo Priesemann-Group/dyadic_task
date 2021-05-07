@@ -38,24 +38,27 @@ class UdpClient(DatagramProtocol):
         print("No one listening")
 
 
-def consume_packet(dx):
+def get_newest_packet():
     if rec_packets.qsize() > 1:
         print(f'Client skipped {rec_packets.qsize() - 1} packet(s).')
         for _ in range(rec_packets.qsize() - 1):
             rec_packets.get()
-    if not rec_packets.empty():
-        packet = rec_packets.get()
-        global player_number
-        opponent_number = (player_number - 1) % 2
-        target_states = [packet[0][2], packet[1][2]]
-        if player_number == 1:  # We are the second player
-            target_states.reverse()
-        ui.scores = list(packet[2][:2].astype(int))
-        packet *= ui.scale_factor  # scale positions as well as radians
-        ui.player_mouse_circle.position = tuple(packet[player_number][:2] + ui.origin_coords)
-        ui.opponent_mouse_circle.position = tuple(packet[opponent_number][:2] + ui.origin_coords)
-        ui.set_ants(packet[3:])
-        ui.set_target_states(target_states)
+    return rec_packets.get()
+
+
+def consume_packet(dx):
+    packet = get_newest_packet()
+    global player_number
+    opponent_number = (player_number - 1) % 2
+    target_states = [packet[0][2], packet[1][2]]
+    if player_number == 1:  # In this case we are the second player
+        target_states.reverse()
+    ui.scores = list(packet[2][:2].astype(float))
+    packet[:, :3] *= ui.scale_factor  # scale positions as well as radians # TODO
+    ui.player_mouse_circle.position = tuple(packet[player_number][:2] + ui.origin_coords)
+    ui.opponent_mouse_circle.position = tuple(packet[opponent_number][:2] + ui.origin_coords)
+    ui.set_ants(packet[3:])
+    ui.set_target_states(target_states)
 
 
 client = UdpClient()

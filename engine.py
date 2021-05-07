@@ -8,6 +8,16 @@ pos = np.full((c.ant_amount, 2), np.nan, dtype='float64')
 vel = np.full((c.ant_amount, 2), np.nan, dtype='float64')
 rad = np.full(c.ant_amount, np.nan, dtype='float64')
 
+# nan => botch players can occupy the point
+# 0   => player 0 owns the point
+# 1   => player 1 owns the point
+# everything between: shared between the players
+shares = np.full(c.ant_amount, np.nan, dtype='float64')
+shares[0] = r.random()
+shares[1] = r.random()
+shares[2] = r.random()
+
+
 score = [0, 0]
 
 
@@ -157,33 +167,62 @@ target_idx = [-1, -1]
 target_occupation_date = [0., 0.]
 
 
-def get_target_state(mouse_positions):
-    out = [-1, -1]
-    for i, mouse_pos in enumerate(mouse_positions):
-        global target_idx, target_occupation_date
-        mouse_pos = np.array(mouse_pos)
+def check_for_target(i, mouse_pos):
+    global target_idx, target_occupation_date, pos
+    for k, p in enumerate(pos):
+        dist = euclid_dist(p - mouse_pos)
+        if dist < rad[k]:
+            target_idx[i] = k
+            target_occupation_date[i] = time.time() + c.time_to_occupy
 
-        if target_idx[i] != -1:  # mouse was on a target
-            dist = euclid_dist(pos[target_idx[i]] - mouse_pos)
-            if dist < rad[target_idx[i]]:  # mouse is still on the target
+
+def occupied(player_idx):
+    global target_idx, target_occupation_date, score
+    if np.isnan(shares[target_idx[player_idx]]):
+        pos[target_idx[player_idx]] = np.array([np.nan, np.nan])  # TODO
+        add_rand_ant()
+
+        score[player_idx] += 1
+
+        target_idx[player_idx] = -1
+        target_occupation_date[player_idx] = 0.
+
+
+def get_target_state(mouse_positions):
+    global target_idx, target_occupation_date, score
+    out = [-1, -1]
+    occupations = {}
+    for player_idx, mouse_pos in enumerate(mouse_positions):
+        mouse_pos = np.array(mouse_pos)
+        if target_idx[player_idx] != -1:  # mouse was on a target
+            dist = euclid_dist(pos[target_idx[player_idx]] - mouse_pos)
+            if dist < rad[target_idx[player_idx]]:  # mouse is still on the target
                 t = time.time()
-                if t > target_occupation_date[i]:  # occupied the target
-                    pos[target_idx[i]] = np.array([np.nan, np.nan])  # TODO
-                    add_rand_ant()
-                    target_idx[i] = -1
-                    target_occupation_date[i] = 0.
-                    out[i] = -1
-                    score[i] += 1
+                if t > target_occupation_date[player_idx]:  # occupied the target
+                    occupations[player_idx] = target_idx[player_idx]
                 else:  # not occupied jet
-                    time_left = target_occupation_date[i] - t
-                    out[i] = target_idx[i] + time_left / c.time_to_occupy
+                    time_left = target_occupation_date[player_idx] - t
+                    out[player_idx] = target_idx[player_idx] + time_left / c.time_to_occupy
             else:  # mouse was on a target but lost it
-                target_idx[i] = -1
-                target_occupation_date[i] = 0.
+                target_idx[player_idx] = -1
+                target_occupation_date[player_idx] = 0.
         else:  # mouse was on no target, check if it is now
-            for k, p in enumerate(pos):
-                dist = euclid_dist(p - mouse_pos)
-                if dist < rad[k]:
-                    target_idx[i] = k
-                    target_occupation_date[i] = time.time() + c.time_to_occupy
+            check_for_target(player_idx, mouse_pos)
+
+    if len(occupations) == 2 and occupations[0] == occupations[1]:  # Both players occupied the same target
+        if not np.isnan(shares[target_idx[0]]):  # A shared target is occupied
+            pos[target_idx[0]] = np.array([np.nan, np.nan])  # TODO
+            add_rand_ant()
+            score[0] += shares[target_idx[0]]
+            score[1] += 1-shares[target_idx[0]]
+            for player_idx in [0, 1]:
+                target_idx[player_idx] = -1
+                target_occupation_date[player_idx] = 0.
+        else:  # Edge case: Both players occupied a not shared target at same time (< 1/80s)
+            score[0] += .5
+            score[1] += .5
+    else:  # Consume occupations
+        for player_idx in occupations.keys():
+            occupied(player_idx)
+
     return out

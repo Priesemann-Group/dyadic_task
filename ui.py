@@ -1,6 +1,8 @@
 import numpy as np
 import conf as c
 from pyglet import clock
+from pyglet import image
+from pyglet.sprite import Sprite
 from pyglet.window import Window
 from pyglet.shapes import Circle, Rectangle
 from pyglet.graphics import Batch
@@ -50,17 +52,19 @@ score_label_2 = Label(
 
 scores = [0, 0]
 
-circles = []
 scale_factor = None
 client_field_size = win.get_size()
 origin_coords = np.array([0, 0])
+ant_shares_mirror = np.full(c.ant_amount, np.nan)
 
+circles = []
 for _ in range(c.ant_amount):
-    circles.append(Circle(0,
-                          0,
-                          float(1),
-                          color=c.ant_color,
-                          batch=circle_batch))
+    img = image.load('src/circ.png')
+    img.anchor_x = img.width // 2
+    img.anchor_y = img.height // 2
+    sprite = Sprite(img, 0, 0, batch=circle_batch)
+    sprite.update(0, 0, None, 1/500)
+    circles.append(sprite)
 
 
 @win.event
@@ -137,16 +141,35 @@ def schedule_interval(func, dt):
     pyglet.clock.schedule_interval(func, dt)
 
 
+def get_center_circle(ant_shares):
+    if np.isnan(ant_shares):
+        img = image.load('src/circ.png')
+    else:
+        img = image.load(f'src/circ_{int(100 * ant_shares)}.png')
+    img.anchor_x = img.width // 2
+    img.anchor_y = img.height // 2
+    return img
+
+
+def update_ant_sprites(i, ant_shares):
+    if not (np.isnan(ant_shares) and np.isnan(ant_shares_mirror[i])):  # they are at least not both None
+        if np.isnan(ant_shares) or np.isnan(ant_shares_mirror[i]):  # only one is None
+            circles[i].image = get_center_circle(ant_shares)
+            ant_shares_mirror[i] = ant_shares
+        else:  # No one is none
+            if int(ant_shares * 100) != int(ant_shares_mirror[i] * 100):
+                circles[i].image = get_center_circle(ant_shares)
+                ant_shares_mirror[i] = ant_shares
+
+
 def set_ants(packet):
     packet[:, :2] += origin_coords  # pos to relative client pos
     for i, p in enumerate(packet):
-        ant_pos, ant_rad = p[:2], p[2]
-        circles[i].position = tuple(ant_pos)
-        circles[i].radius = float(ant_rad)
-        circles[i].color = c.ant_color
-    for i in range(len(packet), c.ant_amount):
-        circles[i].position = (-1000, -1000)
-        circles[i].radius = 0.
+        ant_pos, ant_rad, ant_shares = p[:2], p[2], p[3]
+        circles[i].update(*tuple(ant_pos), None, ant_rad * 2. / 500.)
+        update_ant_sprites(i, ant_shares)
+    for i in range(len(packet), c.ant_amount):  # TODO is this even required with an fixed ant_amount?
+        circles[i].update(-1000, -1000, None, 0.)
 
 
 def set_target_states(target_states):  # Called after set_ants()
@@ -155,7 +178,7 @@ def set_target_states(target_states):  # Called after set_ants()
             idx = int(t_s)
             progress = t_s - idx
             target_circles[i].position = circles[idx].position
-            target_circles[i].radius = circles[idx].radius * (1 - progress)
+            target_circles[i].radius = circles[idx].scale * 500 / 2 * (1 - progress)
             target_circles[i].color = (c.player_colors[i][0] + (255 - c.player_colors[i][0]) * (1 - progress),
                                        c.player_colors[i][1] + (255 - c.player_colors[i][1]) * (1 - progress),
                                        c.player_colors[i][2] + (255 - c.player_colors[i][2]) * (1 - progress))
