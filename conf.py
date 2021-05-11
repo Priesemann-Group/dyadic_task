@@ -14,7 +14,7 @@ background_color = (255, 255, 255)
 margin_color = (0, 0, 0)
 mouse_circle_radius = 5
 ant_color = (100, 100, 200)
-target_opacity = 200
+target_opacity = 64
 
 player_colors = [
     (100, 100, 100),  # clients player color

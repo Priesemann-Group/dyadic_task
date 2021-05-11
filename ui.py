@@ -5,28 +5,30 @@ from pyglet import image
 from pyglet.sprite import Sprite
 from pyglet.window import Window
 from pyglet.shapes import Circle, Rectangle
-from pyglet.graphics import Batch
+from pyglet.graphics import Batch, OrderedGroup
 from pyglet.text import Label
 import pyglet
 
 pyglet.options['vsync'] = False
 win = Window(resizable=True)
 
-circle_batch = Batch()
-label_batch = Batch()
-margin_batch = Batch()
-mouse_batch = Batch()
-target_batch = Batch()
+batch = Batch()
 
-background = Rectangle(0, 0, *win.get_size(), color=c.background_color)
-first_margin = Rectangle(0, 0, 1, 1, color=c.margin_color, batch=margin_batch)
-second_margin = Rectangle(0, 0, 1, 1, color=c.margin_color, batch=margin_batch)
+bg_group = OrderedGroup(0)
+ant_group = OrderedGroup(1)
+fg_group = OrderedGroup(2)
+target_group = OrderedGroup(3)
+mouse_group = OrderedGroup(4)
 
-player_mouse_circle = Circle(0, 0, c.mouse_circle_radius, color=c.player_colors[0], batch=mouse_batch)  # TODO: to list
-opponent_mouse_circle = Circle(0, 0, c.mouse_circle_radius, color=c.player_colors[1], batch=mouse_batch)
+background = Rectangle(0, 0, *win.get_size(), color=c.background_color, batch=batch, group=bg_group)
+first_margin = Rectangle(0, 0, 1, 1, color=c.margin_color, batch=batch, group=fg_group)
+second_margin = Rectangle(0, 0, 1, 1, color=c.margin_color, batch=batch, group=fg_group)
+
+player_mouse_circle = Circle(0, 0, c.mouse_circle_radius, color=c.player_colors[0], batch=batch, group=mouse_group)
+opponent_mouse_circle = Circle(0, 0, c.mouse_circle_radius, color=c.player_colors[1], batch=batch, group=mouse_group)
 target_circles = [
-    Circle(-1000, -1000, 1, color=c.player_colors[0], batch=target_batch),  # For clients player
-    Circle(-1000, -1000, 1, color=c.player_colors[1], batch=target_batch)  # For opponent
+    Circle(-1000, -1000, 1, color=c.player_colors[0], batch=batch, group=target_group),  # For clients player
+    Circle(-1000, -1000, 1, color=c.player_colors[1], batch=batch, group=target_group)  # For opponent
 ]
 
 target_circles[0].opacity = c.target_opacity
@@ -37,19 +39,22 @@ fps_label = Label(
     font_size=c.font_size,
     color=c.label_color,
     x=0, y=win.get_size()[1] - c.font_size,
-    batch=label_batch)
+    batch=batch,
+    group=fg_group)
 score_label_1 = Label(
     font_name=c.font_name,
     font_size=c.font_size,
     color=c.label_color,
     x=0, y=0,
-    batch=label_batch)
+    batch=batch,
+    group=fg_group)
 score_label_2 = Label(
     font_name=c.font_name,
     font_size=c.font_size,
     color=c.label_color,
     x=0, y=c.font_size,
-    batch=label_batch)
+    batch=batch,
+    group=fg_group)
 
 scores = [0, 0]
 
@@ -63,7 +68,7 @@ for _ in range(c.ant_amount):
     img = image.load('src/circ.png')
     img.anchor_x = img.width // 2
     img.anchor_y = img.height // 2
-    sprite = Sprite(img, 0, 0, batch=circle_batch)
+    sprite = Sprite(img, 0, 0, batch=batch, group=ant_group)
     sprite.update(0, 0, None, 1/c.ant_img_size)
     circles.append(sprite)
 
@@ -130,12 +135,7 @@ def on_draw():
     score_label_1.text = f'Score Player 1: {scores[0]}'
     score_label_2.text = f'Score Player 2: {scores[1]}'
 
-    background.draw()
-    circle_batch.draw()
-    target_batch.draw()
-    mouse_batch.draw()
-    label_batch.draw()
-    margin_batch.draw()
+    batch.draw()
 
 
 def schedule_interval(func, dt):
