@@ -28,8 +28,9 @@ target_circles = [
     Circle(-1000, -1000, 1, color=c.player_colors[0], batch=target_batch),  # For clients player
     Circle(-1000, -1000, 1, color=c.player_colors[1], batch=target_batch)  # For opponent
 ]
-#player_target_circle = Circle(-1000, -1000, 1, color=c.player_color, batch=target_batch)
-#opponent_target_circle = Circle(-1000, -1000, 1, color=c.opponent_color, batch=target_batch)
+
+target_circles[0].opacity = c.target_opacity
+target_circles[1].opacity = c.target_opacity
 
 fps_label = Label(
     font_name=c.font_name,
@@ -63,7 +64,7 @@ for _ in range(c.ant_amount):
     img.anchor_x = img.width // 2
     img.anchor_y = img.height // 2
     sprite = Sprite(img, 0, 0, batch=circle_batch)
-    sprite.update(0, 0, None, 1/500)
+    sprite.update(0, 0, None, 1/c.ant_img_size)
     circles.append(sprite)
 
 
@@ -166,22 +167,23 @@ def set_ants(packet):
     packet[:, :2] += origin_coords  # pos to relative client pos
     for i, p in enumerate(packet):
         ant_pos, ant_rad, ant_shares = p[:2], p[2], p[3]
-        circles[i].update(*tuple(ant_pos), None, ant_rad * 2. / 500.)
+        circles[i].update(*tuple(ant_pos), None, ant_rad * 2. / c.ant_img_size)
         update_ant_sprites(i, ant_shares)
-    for i in range(len(packet), c.ant_amount):  # TODO is this even required with an fixed ant_amount?
+    for i in range(len(packet), c.ant_amount):
         circles[i].update(-1000, -1000, None, 0.)
 
 
 def set_target_states(target_states):  # Called after set_ants()
     for i, t_s in enumerate(target_states):
-        if t_s > 0.:
+        if t_s > -.5:
             idx = int(t_s)
             progress = t_s - idx
             target_circles[i].position = circles[idx].position
-            target_circles[i].radius = circles[idx].scale * 500 / 2 * (1 - progress)
-            target_circles[i].color = (c.player_colors[i][0] + (255 - c.player_colors[i][0]) * (1 - progress),
-                                       c.player_colors[i][1] + (255 - c.player_colors[i][1]) * (1 - progress),
-                                       c.player_colors[i][2] + (255 - c.player_colors[i][2]) * (1 - progress))
+            target_circles[i].radius = (circles[idx].scale * c.ant_img_size / 2.) * (1. - progress)
+            target_circles[i].color = \
+                (int(float(c.player_colors[i][0]) + float(255 - c.player_colors[i][0]) * (1. - progress)),
+                 int(float(c.player_colors[i][1]) + float(255 - c.player_colors[i][1]) * (1. - progress)),
+                 int(float(c.player_colors[i][2]) + float(255 - c.player_colors[i][2]) * (1. - progress)))
         else:
             target_circles[i].position = (-1000, -1000)
 

@@ -13,9 +13,6 @@ rad = np.full(c.ant_amount, np.nan, dtype='float64')
 # 1   => player 1 owns the point
 # everything between: shared between the players
 shares = np.full(c.ant_amount, np.nan, dtype='float64')
-shares[0] = r.random()
-shares[1] = r.random()
-shares[2] = r.random()
 
 
 score = [0, 0]
@@ -46,7 +43,7 @@ def accelerations_calc(ant_positions):
 
 
 @njit
-def collision_calc(ants, radians):
+def collision_calc(ants, radians):  # unused
     coll_count = 0
     colls = np.array([[-1, -1]] * len(ants))
     already_calculated = [False] * len(ants)  # TODO resize?
@@ -68,21 +65,26 @@ def load():
     accelerations_calc(pos)
     euclid_dist(np.array([0, 0]))
     gaussian(0.)
-    for _ in range(c.ant_amount):  # TODO
+    for _ in range(c.ant_amount):  # TODO more sophisticated population control
         add_rand_ant()
+    shares[0] = r.random()
+    shares[1] = r.random()
+    shares[2] = r.random()
 
 
-def add_ant(x, y, angle, radius=None):
-    if not radius:  # TODO del this
-        radius = r.uniform(c.min_radius, c.max_radius)
+def add_ant(x, y, angle, radius, share=None):
     global pos, vel
     i = np.where(np.isnan(pos[:, 0]))[0][0]  # Assumption: There is always at least one nan!
     pos[i] = np.array([x, y], dtype='float64')
     vel[i] = np.array([np.cos(angle), np.sin(angle)]) * c.velocity
     rad[i] = radius
+    if share:
+        shares[i] = share
+    else:
+        shares[i] = np.nan
 
 
-def add_rand_ant():
+def add_rand_ant(share=None):
     x, y = r.randrange(c.field_size[0]), r.randrange(c.field_size[1])
     radius = r.uniform(c.min_radius, c.max_radius)
     proposed_pos = np.array([x, y])
@@ -99,7 +101,7 @@ def add_rand_ant():
                     is_valid = True
                     break
     angle = r.uniform(0., np.pi * 2)
-    add_ant(x, y, angle)
+    add_ant(x, y, angle, radius, share)
 
 
 def rad_to_area(i):
@@ -179,13 +181,14 @@ def check_for_target(i, mouse_pos):
 def occupied(player_idx):
     global target_idx, target_occupation_date, score
     if np.isnan(shares[target_idx[player_idx]]):
-        pos[target_idx[player_idx]] = np.array([np.nan, np.nan])  # TODO
+        pos[target_idx[player_idx]] = np.array([np.nan, np.nan])
         add_rand_ant()
-
         score[player_idx] += 1
-
         target_idx[player_idx] = -1
         target_occupation_date[player_idx] = 0.
+        return -1
+    else:
+        return target_idx[player_idx]
 
 
 def get_target_state(mouse_positions):
@@ -209,20 +212,23 @@ def get_target_state(mouse_positions):
         else:  # mouse was on no target, check if it is now
             check_for_target(player_idx, mouse_pos)
 
+    return consume_occupation_dict(occupations, out)
+
+
+def consume_occupation_dict(occupations, out):
     if len(occupations) == 2 and occupations[0] == occupations[1]:  # Both players occupied the same target
         if not np.isnan(shares[target_idx[0]]):  # A shared target is occupied
-            pos[target_idx[0]] = np.array([np.nan, np.nan])  # TODO
-            add_rand_ant()
+            pos[target_idx[0]] = np.array([np.nan, np.nan])
+            add_rand_ant(r.random())
             score[0] += shares[target_idx[0]]
             score[1] += 1-shares[target_idx[0]]
             for player_idx in [0, 1]:
                 target_idx[player_idx] = -1
                 target_occupation_date[player_idx] = 0.
-        else:  # Edge case: Both players occupied a not shared target at same time (< 1/80s)
+        else:  # Edge case: Both players occupied a not shared target within the same time (< 1/80s)
             score[0] += .5
             score[1] += .5
     else:  # Consume occupations
         for player_idx in occupations.keys():
-            occupied(player_idx)
-
+            out[player_idx] = occupied(player_idx)
     return out

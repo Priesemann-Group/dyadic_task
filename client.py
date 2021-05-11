@@ -54,7 +54,7 @@ def consume_packet(dx):
     if player_number == 1:  # In this case we are the second player
         target_states.reverse()
     ui.scores = list(packet[2][:2].astype(float))
-    packet[:, :3] *= ui.scale_factor  # scale positions as well as radians # TODO
+    packet[:, :3] *= ui.scale_factor  # scale positions as well as radians
     ui.player_mouse_circle.position = tuple(packet[player_number][:2] + ui.origin_coords)
     ui.opponent_mouse_circle.position = tuple(packet[opponent_number][:2] + ui.origin_coords)
     ui.set_ants(packet[3:])
