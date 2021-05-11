@@ -26,6 +26,12 @@ pos_updates_ps = 80
 field_size = (1920, 1080)
 server_ip = "134.76.24.227"
 server_port = 8767
+game_state_data_file_name = 'gs.h5'
+
+
+_rows = ant_amount + 3  # For the 3 headers
+_cols = 4  # For x, y, rad, share values for each ant
+packet_shape = (_rows, _cols)
 
 # For sprite creation
 ant_img_size = 256
