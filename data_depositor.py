@@ -2,7 +2,7 @@ import tables
 import os
 import conf
 
-file = tables.File(conf.game_state_data_file_name)
+file = None
 
 
 def get_output_path():
