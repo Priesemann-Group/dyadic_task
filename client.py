@@ -49,7 +49,7 @@ class UdpClient(DatagramProtocol):
         else:
             packet = pickle.loads(datagram)
             if str(packet) == str(b'ping request answer'):
-                self.ping = (time.time() - self.ping_request_start) * 100  # in milliseconds
+                self.ping = (time.time() - self.ping_request_start) * 1000  # in milliseconds
                 self.ping_request_start = -1.
             else:
                 rec_packets.put(packet)
