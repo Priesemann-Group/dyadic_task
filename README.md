@@ -23,6 +23,14 @@ internet connection. The following packages are required:
 
     pip3 install numpy pyglet twisted numba
 
+Additionally, PyTables is required. Installing PyTables on Ubuntu:
+
+    sudo apt install python3-pytables
+
+Installing PyTables on ArchLinux:
+
+    sudo pacman -S python-pytables
+
 In order to start the server run:
 
     python3 server.py
