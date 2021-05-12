@@ -34,27 +34,23 @@ target_circles = [
 target_circles[0].opacity = c.target_opacity
 target_circles[1].opacity = c.target_opacity
 
-fps_label = Label(
-    font_name=c.font_name,
-    font_size=c.font_size,
-    color=c.label_color,
-    x=0, y=win.get_size()[1] - c.font_size,
-    batch=batch,
-    group=fg_group)
-score_label_1 = Label(
-    font_name=c.font_name,
-    font_size=c.font_size,
-    color=c.label_color,
-    x=0, y=0,
-    batch=batch,
-    group=fg_group)
-score_label_2 = Label(
-    font_name=c.font_name,
-    font_size=c.font_size,
-    color=c.label_color,
-    x=0, y=c.font_size,
-    batch=batch,
-    group=fg_group)
+
+def get_label(x, y):
+    return Label(
+        font_name=c.font_name,
+        font_size=c.font_size,
+        color=c.label_color,
+        x=x, y=y,
+        batch=batch,
+        group=fg_group)
+
+
+fps_label = get_label(0, win.get_size()[1] - c.font_size)
+ping_label_1 = get_label(0, win.get_size()[1] - 1 * c.font_size)
+ping_label_2 = get_label(0, win.get_size()[1] - 3 * c.font_size)
+score_label_1 = get_label(0, 0)
+score_label_2 = get_label(0, c.font_size)
+player_number_label = get_label(0, 2 * c.font_size)
 
 scores = [0, 0]
 
@@ -64,6 +60,9 @@ origin_coords = np.array([0, 0])
 ant_shares_mirror = np.full(c.ant_amount, np.nan)
 
 circles = []
+player_number = -2
+player_pings = [-1, -1]
+
 for _ in range(c.ant_amount):
     img = image.load('src/circ.png')
     img.anchor_x = img.width // 2
@@ -119,8 +118,14 @@ def on_resize(width, height):
     background.height = client_field_size[1]
     background.x, background.y = tuple(origin_coords)
 
-    fps_label.x = origin_coords[0]
+    fps_label.x = origin_coords[0]  # TODO write method if possible
     fps_label.y = origin_coords[1] + client_field_size[1] - c.font_size
+    ping_label_1.x = origin_coords[0]
+    ping_label_1.y = origin_coords[1] + client_field_size[1] - 2 * c.font_size
+    ping_label_2.x = origin_coords[0]
+    ping_label_2.y = origin_coords[1] + client_field_size[1] - 3 * c.font_size
+    player_number_label.x = origin_coords[0]
+    player_number_label.y = origin_coords[1] + 2 * c.font_size
     score_label_1.x = origin_coords[0]
     score_label_1.y = origin_coords[1] + c.font_size
     score_label_2.x = origin_coords[0]
@@ -132,8 +137,11 @@ def on_draw():
     win.clear()
 
     fps_label.text = f'FPS: {clock.get_fps()}'
+    ping_label_1.text = f'Ping Player 1: {player_pings[0]}'
+    ping_label_2.text = f'Ping Player 2: {player_pings[1]}'
     score_label_1.text = f'Score Player 1: {scores[0]}'
     score_label_2.text = f'Score Player 2: {scores[1]}'
+    player_number_label.text = f'You are Player {player_number + 1}'
 
     batch.draw()
 
@@ -146,7 +154,10 @@ def get_center_circle(ant_shares):
     if np.isnan(ant_shares):
         img = image.load('src/circ.png')
     else:
-        img = image.load(f'src/circ_{int(100 * ant_shares)}.png')
+        if player_number == 0:
+            img = image.load(f'src/circ_{int(100 * ant_shares)}.png')
+        else:
+            img = image.load(f'src/circ_{int(100 * (1-ant_shares))}.png')
     img.anchor_x = img.width // 2
     img.anchor_y = img.height // 2
     return img

@@ -1,5 +1,7 @@
 import pickle
 import sys
+import time
+
 import ui
 import conf as c
 from twisted.internet.protocol import DatagramProtocol
@@ -12,6 +14,11 @@ player_number = None
 
 
 class UdpClient(DatagramProtocol):
+
+    def __init__(self):
+        self.ping = 0.
+        self.ping_request_start = -1.
+
     def startProtocol(self):
         """
         Called after protocol has started listening.
@@ -20,19 +27,32 @@ class UdpClient(DatagramProtocol):
             self.transport.connect('127.0.0.1', c.server_port)
         else:
             self.transport.connect(c.server_ip, c.server_port)
-        self.transport.write(pickle.dumps((0, 0)))
+        self.transport.write(pickle.dumps((0, 0, 0)))
 
     def send_mouse_pos(self, pos):
-        self.transport.write(pickle.dumps(pos))
+        self.transport.write(pickle.dumps((*pos, int(self.ping))))
+        #if self.ping_request_start > 0:
+        #    self.transport.write(pickle.dumps((*pos, -1)))  # -1 encodes ping request
+        #else:
+        #    self.transport.write(pickle.dumps((*pos, int(self.ping))))
+
+    def request_ping(self, dx):
+        self.ping_request_start = time.time()
+        self.transport.write(pickle.dumps(b'ping request'))
 
     def datagramReceived(self, datagram, address):
         global player_number
         if player_number is None:
             player_number = pickle.loads(datagram)
+            ui.player_number = player_number
             print(f'this client got player number: {player_number}')
         else:
             packet = pickle.loads(datagram)
-            rec_packets.put(packet)
+            if str(packet) == str(b'ping request answer'):
+                self.ping = (time.time() - self.ping_request_start) * 100  # in milliseconds
+                self.ping_request_start = -1.
+            else:
+                rec_packets.put(packet)
 
     def connectionRefused(self):
         print("No one listening")
@@ -54,6 +74,7 @@ def consume_packet(dx):
     if player_number == 1:  # In this case we are the second player
         target_states.reverse()
     ui.scores = list(packet[2][:2].astype(float))
+    ui.player_pings = list(packet[:2, 3])
     packet[:, :3] *= ui.scale_factor  # scale positions as well as radians
     ui.player_mouse_circle.position = tuple(packet[player_number][:2] + ui.origin_coords)
     ui.opponent_mouse_circle.position = tuple(packet[opponent_number][:2] + ui.origin_coords)
@@ -76,4 +97,5 @@ Thread(target=reactor.run,
        ).start()
 
 ui.schedule_interval(consume_packet, 2 ** -8)
+ui.schedule_interval(client.request_ping, .5)
 ui.run()

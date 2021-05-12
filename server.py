@@ -13,6 +13,7 @@ class Server(DatagramProtocol):
         self.player_addrs = [('empty', 4242), ('empty', 4242)]
         self.player_pos = [(0, 0), (0, 0)]
         self.player_last_contact = [-1., -1.]
+        self.player_ping = [-1., -1.]
 
     def startProtocol(self):
         reactor.callLater(1 / c.pos_updates_ps, update)
@@ -20,29 +21,34 @@ class Server(DatagramProtocol):
     def datagramReceived(self, data, addr):
         if not self.check_player_contact():  # if the first client connects the game loop starts again
             reactor.callLater(1 / c.pos_updates_ps, update)
-        if addr not in self.player_addrs:
+
+        packet = pickle.loads(data)
+
+        if packet == b'ping request':
+            self.transport.write(pickle.dumps(b'ping request answer'), addr)
+            return
+
+        if addr not in self.player_addrs:  # unknown player, try to register
             for i, lc in enumerate(self.player_last_contact):
-                if lc < 0.:
+                if lc < 0.:  # register new player
                     self.player_addrs[i] = addr
-                    self.player_last_contact[i] = time.time()
-                    self.player_pos[i] = pickle.loads(data)
+                    self.consume_client_packet(packet, i)
                     self.transport.write(pickle.dumps(i), addr)
                     return
             # TODO send server is full message
         else:
             idx = self.player_addrs.index(addr)
-            self.player_last_contact[idx] = time.time()
-            self.player_pos[idx] = pickle.loads(data)
+            self.consume_client_packet(packet, idx)
+
+    def consume_client_packet(self, packet, client_idx):
+        self.player_last_contact[client_idx] = time.time()
+        x, y, ping = packet
+        self.player_pos[client_idx] = (x, y)
+        self.player_ping[client_idx] = ping
+        print(ping)
+
 
     def send_packet(self, game_state):
-        #if ant_pos is not None:
-        #    target_state = e.get_target_state(self.player_pos)
-        #    mouse_header = np.array([[*self.player_pos[0], target_state[0], 0],
-        #                             [*self.player_pos[1], target_state[1], 0]])
-        #    score_header = np.array([*e.score, 0, 0])  # 0 values are currently unused
-        #    out = np.column_stack((ant_pos, ant_rad, ant_shares))
-        #    out = np.vstack((mouse_header, score_header, out))
-        #    out = pickle.dumps(out)
         packet = pickle.dumps(game_state)
         for i, addr in enumerate(self.player_addrs):
             if self.player_last_contact[i] > 0.:
@@ -57,10 +63,15 @@ class Server(DatagramProtocol):
         return self.player_last_contact[0] > 0. or self.player_last_contact[1] > 0.
 
 
+e.load()
+data_depositor.init()
+server = Server()
+
+
 def get_game_state():
     target_state = e.get_target_state(server.player_pos)
-    mouse_header = np.array([[*server.player_pos[0], target_state[0], 0],
-                             [*server.player_pos[1], target_state[1], 0]])
+    mouse_header = np.array([[*server.player_pos[0], target_state[0], server.player_ping[0]],
+                             [*server.player_pos[1], target_state[1], server.player_ping[1]]])
     score_header = np.array([*e.score, 0, 0])  # 0 values are currently unused
     game_state = np.column_stack((e.pos, e.rad, e.shares))
     game_state = np.vstack((mouse_header, score_header, game_state))
@@ -78,9 +89,6 @@ def update(dt=0):
             server.send_packet(game_state)
             data_depositor.deposit(game_state)
 
-e.load()
-data_depositor.init()
-server = Server()
 reactor.listenUDP(c.server_port, server)
 reactor.run()
 data_depositor.close()
