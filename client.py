@@ -31,10 +31,6 @@ class UdpClient(DatagramProtocol):
 
     def send_mouse_pos(self, pos):
         self.transport.write(pickle.dumps((*pos, int(self.ping))))
-        #if self.ping_request_start > 0:
-        #    self.transport.write(pickle.dumps((*pos, -1)))  # -1 encodes ping request
-        #else:
-        #    self.transport.write(pickle.dumps((*pos, int(self.ping))))
 
     def request_ping(self, dx):
         self.ping_request_start = time.time()

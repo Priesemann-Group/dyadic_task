@@ -9,8 +9,8 @@ from pyglet.graphics import Batch, OrderedGroup
 from pyglet.text import Label
 import pyglet
 
-pyglet.options['vsync'] = False
-win = Window(resizable=True)
+#pyglet.options['vsync'] = False
+win = Window(resizable=True, style=Window.WINDOW_STYLE_BORDERLESS, vsync=False)
 
 batch = Batch()
 
