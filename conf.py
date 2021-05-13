@@ -6,6 +6,9 @@ max_radius = 60
 velocity = 3
 time_to_occupy = .5
 
+pos_updates_ps = 60
+update_amount = pos_updates_ps * 20  # 20 seconds
+
 # Appearance
 font_name = 'Arial'
 font_size = 20
@@ -22,12 +25,14 @@ player_colors = [
 ]
 
 # Server configs
-pos_updates_ps = 80
 field_size = (1920, 1080)
-server_ip = "134.76.24.227"
+server_ip = '134.76.24.227'
 server_port = 8767
-game_state_data_file_name = 'gs.h5'
 
+time_until_disconnect = 60
+
+output_folder_name = 'game_state_records'
+date_format = '%d-%m-%y_%H-%M-%S'
 
 _rows = ant_amount + 3  # For the 3 headers
 _cols = 4  # For x, y, rad, share values for each ant

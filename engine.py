@@ -65,6 +65,14 @@ def load():
     accelerations_calc(pos)
     euclid_dist(np.array([0, 0]))
     gaussian(0.)
+
+
+def respawn_ants():
+    global pos, vel, rad, shares
+    pos = np.full((c.ant_amount, 2), np.nan, dtype='float64')
+    vel = np.full((c.ant_amount, 2), np.nan, dtype='float64')
+    rad = np.full(c.ant_amount, np.nan, dtype='float64')
+    shares = np.full(c.ant_amount, np.nan, dtype='float64')
     for _ in range(c.ant_amount):  # TODO more sophisticated population control
         add_rand_ant()
     shares[0] = r.random()

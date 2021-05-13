@@ -1,27 +1,38 @@
 import tables
 import os
 import conf
+from datetime import datetime
 
 file = None
+path = ''
 
 
-def get_output_path():
+def get_output_dir_path():
     real_path = os.path.realpath(__file__)
-    dir_path = os.path.dirname(real_path)
-    return f'{dir_path}/{conf.game_state_data_file_name}'
+    dir_path = os.path.dirname(real_path) + '/' + conf.output_folder_name
+    return dir_path
 
 
-def init():
-    global file
-    path = get_output_path()
-    if os.path.exists(path):
-        os.remove(path)
+def new_file():
+    dir_path = get_output_dir_path()
+    now = datetime.now()
+    global file, path
+
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+
+    path = f'{dir_path}/gs_{now.strftime(conf.date_format)}.h5'
+
     os.mknod(path)
     file = tables.open_file(path, mode='w')
     atom = tables.Float64Atom()
 
     enlargeable_array_shape = (0, *conf.packet_shape)
-    file.create_earray(file.root, 'data', atom, enlargeable_array_shape)
+    file.create_earray(file.root, 'data', atom, enlargeable_array_shape)  # TODO use name for storing different games
+
+
+#def init():
+#    global file, path
 
 
 def deposit(game_state):
@@ -30,4 +41,5 @@ def deposit(game_state):
 
 def close():
     file.close()
+    os.remove(path)  # Remove invalid game record
 

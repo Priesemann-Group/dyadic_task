@@ -9,9 +9,7 @@ from pyglet.graphics import Batch, OrderedGroup
 from pyglet.text import Label
 import pyglet
 
-#pyglet.options['vsync'] = False
-win = Window(resizable=True, style=Window.WINDOW_STYLE_BORDERLESS, vsync=False)
-
+win = Window(resizable=True, vsync=False)
 batch = Batch()
 
 bg_group = OrderedGroup(0)
@@ -23,6 +21,11 @@ mouse_group = OrderedGroup(4)
 background = Rectangle(0, 0, *win.get_size(), color=c.background_color, batch=batch, group=bg_group)
 first_margin = Rectangle(0, 0, 1, 1, color=c.margin_color, batch=batch, group=fg_group)
 second_margin = Rectangle(0, 0, 1, 1, color=c.margin_color, batch=batch, group=fg_group)
+
+black_margins = [
+    Rectangle(0, 0, 1, 1, color=c.margin_color, batch=batch, group=fg_group),
+    Rectangle(0, 0, 1, 1, color=c.margin_color, batch=batch, group=fg_group)
+]
 
 player_mouse_circle = Circle(0, 0, c.mouse_circle_radius, color=c.player_colors[0], batch=batch, group=mouse_group)
 opponent_mouse_circle = Circle(0, 0, c.mouse_circle_radius, color=c.player_colors[1], batch=batch, group=mouse_group)
@@ -46,7 +49,7 @@ def get_label(x, y):
 
 
 fps_label = get_label(0, win.get_size()[1] - c.font_size)
-ping_label_1 = get_label(0, win.get_size()[1] - 1 * c.font_size)
+ping_label_1 = get_label(0, win.get_size()[1] - 2 * c.font_size)
 ping_label_2 = get_label(0, win.get_size()[1] - 3 * c.font_size)
 score_label_1 = get_label(0, 0)
 score_label_2 = get_label(0, c.font_size)
@@ -78,8 +81,8 @@ def on_resize(width, height):
     global client_field_size
     global origin_coords
 
-    client_field_size = [width, height]
     scale_factor = None
+    client_field_size = [width, height]
     origin_coords = np.array([0, 0])
 
     aspect_ratio_client = client_field_size[0] / client_field_size[1]
@@ -91,25 +94,27 @@ def on_resize(width, height):
         origin_coords[0] = (width - client_field_size[0]) // 2            # #    # #
         scale_factor = client_field_size[0] / c.field_size[0]             ##########
 
-        first_margin.width = origin_coords[0]
-        first_margin.height = client_field_size[1]
-        second_margin.width = origin_coords[0]
-        second_margin.height = client_field_size[1]
-        second_margin.x = origin_coords[0] + client_field_size[0]
-        second_margin.y = 0
+        black_margins[0].width = origin_coords[0]
+        black_margins[0].height = client_field_size[1]
+        black_margins[1].width = origin_coords[0]
+        black_margins[1].height = client_field_size[1]
+
+        black_margins[1].x = origin_coords[0] + client_field_size[0]
+        black_margins[1].y = 0
 
     elif aspect_ratio_client < aspect_ratio_server:  # lower, upper margins
         # width is the limiting factor => height is what we adapt
         client_field_size[1] = width / aspect_ratio_server
         origin_coords[1] = (height - client_field_size[1]) // 2
-        scale_factor = client_field_size[0] / c.field_size[0]
+        scale_factor = client_field_size[1] / c.field_size[1]
 
-        first_margin.width = client_field_size[0]
-        first_margin.height = origin_coords[1]
-        second_margin.width = client_field_size[0]
-        second_margin.height = origin_coords[1]
-        second_margin.x = 0
-        second_margin.y = origin_coords[1] + client_field_size[1]
+        black_margins[0].width = client_field_size[0]
+        black_margins[0].height = origin_coords[1]
+        black_margins[1].width = client_field_size[0]
+        black_margins[1].height = origin_coords[1]
+
+        black_margins[1].x = 0
+        black_margins[1].y = origin_coords[1] + client_field_size[1]
 
     else:
         scale_factor = client_field_size[0] / c.field_size[0]  # TODO check whether this case works
@@ -118,7 +123,7 @@ def on_resize(width, height):
     background.height = client_field_size[1]
     background.x, background.y = tuple(origin_coords)
 
-    fps_label.x = origin_coords[0]  # TODO write method if possible
+    fps_label.x = origin_coords[0]
     fps_label.y = origin_coords[1] + client_field_size[1] - c.font_size
     ping_label_1.x = origin_coords[0]
     ping_label_1.y = origin_coords[1] + client_field_size[1] - 2 * c.font_size
