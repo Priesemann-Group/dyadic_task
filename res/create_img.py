@@ -1,7 +1,7 @@
 from PIL import Image, ImageDraw
 import os
 
-import conf
+from src import conf
 
 real_path = os.path.realpath(__file__)
 dir_path = os.path.dirname(real_path)

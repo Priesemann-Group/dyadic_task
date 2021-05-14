@@ -31,7 +31,7 @@ server_port = 8767
 
 time_until_disconnect = 60
 
-output_folder_name = 'game_state_records'
+output_folder_name = 'game_records'
 date_format = '%d-%m-%y_%H-%M-%S'
 
 _rows = ant_amount + 3  # For the 3 headers

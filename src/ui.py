@@ -67,7 +67,7 @@ player_number = -2
 player_pings = [-1, -1]
 
 for _ in range(c.ant_amount):
-    img = image.load('src/circ.png')
+    img = image.load('../res/img/circ.png')
     img.anchor_x = img.width // 2
     img.anchor_y = img.height // 2
     sprite = Sprite(img, 0, 0, batch=batch, group=ant_group)
@@ -157,12 +157,12 @@ def schedule_interval(func, dt):
 
 def get_center_circle(ant_shares):
     if np.isnan(ant_shares):
-        img = image.load('src/circ.png')
+        img = image.load('../res/img/circ.png')
     else:
         if player_number == 0:
-            img = image.load(f'src/circ_{int(100 * ant_shares)}.png')
+            img = image.load(f'../res/img/circ_{int(100 * ant_shares)}.png')
         else:
-            img = image.load(f'src/circ_{int(100 * (1-ant_shares))}.png')
+            img = image.load(f'../res/img/circ_{int(100 * (1-ant_shares))}.png')
     img.anchor_x = img.width // 2
     img.anchor_y = img.height // 2
     return img

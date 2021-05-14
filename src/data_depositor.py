@@ -1,6 +1,6 @@
 import tables
 import os
-import conf
+from . import conf
 from datetime import datetime
 
 file = None
@@ -9,7 +9,7 @@ path = ''
 
 def get_output_dir_path():
     real_path = os.path.realpath(__file__)
-    dir_path = os.path.dirname(real_path) + '/' + conf.output_folder_name
+    dir_path = os.path.dirname(real_path) + '/../' + conf.output_folder_name
     return dir_path
 
 
