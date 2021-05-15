@@ -245,7 +245,7 @@ def get_target_state(mouse_positions):
 
 
 def shares_to_scores(s):
-    return 10 * s, 10 * (1-s)  # TODO improve
+    return c.cooperative_reward * s, c.cooperative_reward * (1-s)  # TODO improve
 
 
 def consume_occupation_dict(occupations, out):
@@ -253,8 +253,10 @@ def consume_occupation_dict(occupations, out):
         if not np.isnan(shares[target_idx[0]]):  # A shared target is occupied
             pos[target_idx[0]] = np.array([np.nan, np.nan])
             add_rand_ant(r.random())
-            score[0] += shares[target_idx[0]]  # TODO shares_to_scores
-            score[1] += 1-shares[target_idx[0]]
+            score[0], score[1] = shares_to_scores(shares[target_idx[0]])
+            score_state[0], score_state[1] = shares_to_scores(shares[target_idx[0]])
+            #score[0] += shares[target_idx[0]]  # TODO shares_to_scores
+            #score[1] += 1-shares[target_idx[0]]
             out[0], out[1] = -1 * target_idx[0], -1 * target_idx[1]
             for player_idx in [0, 1]:
                 target_idx[player_idx] = -1
