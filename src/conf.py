@@ -5,6 +5,10 @@ min_radius = 42
 max_radius = 60
 velocity = 3
 time_to_occupy = .5
+occupied_animation_time = .3  # should be < time_to_occupy
+
+competitive_reward = 1
+cooperative_reward = 10
 
 pos_updates_ps = 60
 update_amount = pos_updates_ps * 20  # 20 seconds
@@ -18,6 +22,7 @@ margin_color = (0, 0, 0)
 mouse_circle_radius = 5
 ant_color = (100, 100, 200)
 target_opacity = 64
+score_popup_offset = 38  # TODO find dynamic solution
 
 player_colors = [
     (100, 100, 100),  # clients player color

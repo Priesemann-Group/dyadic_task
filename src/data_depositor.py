@@ -1,6 +1,6 @@
 import tables
 import os
-from . import conf
+import conf
 from datetime import datetime
 
 file = None

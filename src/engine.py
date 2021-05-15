@@ -16,6 +16,8 @@ shares = np.full(c.ant_amount, np.nan, dtype='float64')
 
 
 score = [0, 0]
+score_state = [np.nan, np.nan]
+score_animation_end = [0., 0.]
 
 
 @njit
@@ -161,6 +163,17 @@ def correct_to_boundaries():
                 vel[i][1] *= -1
 
 
+def update_animations():
+    t = time.time()
+    for i in [0, 1]:
+        if not np.isnan(score_state[i]):
+            time_left = score_animation_end[i] - t
+            if time_left < 0:  # Animation is expired
+                score_state[i] = np.nan
+            else:
+                score_state[i] = time_left / c.occupied_animation_time + int(score_state[i])
+
+
 def update(dt):
     global pos, vel
     acc = accelerations_calc(pos)
@@ -171,6 +184,7 @@ def update(dt):
     pos += vel
     # collisions()
     correct_to_boundaries()
+    update_animations()
 
 
 target_idx = [-1, -1]
@@ -188,13 +202,19 @@ def check_for_target(i, mouse_pos):
 
 def occupied(player_idx):
     global target_idx, target_occupation_date, score
-    if np.isnan(shares[target_idx[player_idx]]):
+    if np.isnan(shares[target_idx[player_idx]]):  # Not a shared target
         pos[target_idx[player_idx]] = np.array([np.nan, np.nan])
         add_rand_ant()
-        score[player_idx] += 1
+
+        score[player_idx] += c.competitive_reward
+        score_state[player_idx] = c.competitive_reward
+        score_animation_end[player_idx] = time.time() + c.occupied_animation_time
+
+        target = target_idx[player_idx]
         target_idx[player_idx] = -1
         target_occupation_date[player_idx] = 0.
-        return -1
+        #return -1
+        return target
     else:
         return target_idx[player_idx]
 
@@ -202,6 +222,7 @@ def occupied(player_idx):
 def get_target_state(mouse_positions):
     global target_idx, target_occupation_date, score
     out = [-1, -1]
+    #out = [np.nan, np.nan]
     occupations = {}
     for player_idx, mouse_pos in enumerate(mouse_positions):
         mouse_pos = np.array(mouse_pos)
@@ -223,20 +244,25 @@ def get_target_state(mouse_positions):
     return consume_occupation_dict(occupations, out)
 
 
+def shares_to_scores(s):
+    return 10 * s, 10 * (1-s)  # TODO improve
+
+
 def consume_occupation_dict(occupations, out):
     if len(occupations) == 2 and occupations[0] == occupations[1]:  # Both players occupied the same target
         if not np.isnan(shares[target_idx[0]]):  # A shared target is occupied
             pos[target_idx[0]] = np.array([np.nan, np.nan])
             add_rand_ant(r.random())
-            score[0] += shares[target_idx[0]]
+            score[0] += shares[target_idx[0]]  # TODO shares_to_scores
             score[1] += 1-shares[target_idx[0]]
+            out[0], out[1] = -1 * target_idx[0], -1 * target_idx[1]
             for player_idx in [0, 1]:
                 target_idx[player_idx] = -1
                 target_occupation_date[player_idx] = 0.
-        else:  # Edge case: Both players occupied a not shared target within the same time (< 1/80s)
+        else:  # Edge case: Both players occupied a not shared target within the same time (< 1/60s)
             score[0] += .5
             score[1] += .5
     else:  # Consume occupations
         for player_idx in occupations.keys():
-            out[player_idx] = occupied(player_idx)
+            out[player_idx] = float(occupied(player_idx))
     return out

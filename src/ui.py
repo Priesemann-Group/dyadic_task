@@ -16,7 +16,9 @@ bg_group = OrderedGroup(0)
 ant_group = OrderedGroup(1)
 fg_group = OrderedGroup(2)
 target_group = OrderedGroup(3)
-mouse_group = OrderedGroup(4)
+#mouse_group = OrderedGroup(4)
+opponent_group = OrderedGroup(4)
+player_group = OrderedGroup(5)
 
 background = Rectangle(0, 0, *win.get_size(), color=c.background_color, batch=batch, group=bg_group)
 first_margin = Rectangle(0, 0, 1, 1, color=c.margin_color, batch=batch, group=fg_group)
@@ -27,8 +29,13 @@ black_margins = [
     Rectangle(0, 0, 1, 1, color=c.margin_color, batch=batch, group=fg_group)
 ]
 
-player_mouse_circle = Circle(0, 0, c.mouse_circle_radius, color=c.player_colors[0], batch=batch, group=mouse_group)
-opponent_mouse_circle = Circle(0, 0, c.mouse_circle_radius, color=c.player_colors[1], batch=batch, group=mouse_group)
+#player_mouse_circle = Circle(0, 0, c.mouse_circle_radius, color=c.player_colors[0], batch=batch, group=player_group)
+#opponent_mouse_circle = Circle(0, 0, c.mouse_circle_radius, color=c.player_colors[1], batch=batch, group=opponent_group)
+
+player_mouse_circles = [Circle(0, 0, c.mouse_circle_radius, color=c.player_colors[0], batch=batch, group=player_group),
+                        Circle(0, 0, c.mouse_circle_radius, color=c.player_colors[1], batch=batch, group=opponent_group)
+                        ]
+
 target_circles = [
     Circle(-1000, -1000, 1, color=c.player_colors[0], batch=batch, group=target_group),  # For clients player
     Circle(-1000, -1000, 1, color=c.player_colors[1], batch=batch, group=target_group)  # For opponent
@@ -38,22 +45,29 @@ target_circles[0].opacity = c.target_opacity
 target_circles[1].opacity = c.target_opacity
 
 
-def get_label(x, y):
+def get_label(x, y, font_name=c.font_name, font_size=c.font_size, color=c.label_color, group=fg_group):
     return Label(
-        font_name=c.font_name,
-        font_size=c.font_size,
-        color=c.label_color,
+        font_name=font_name,
+        font_size=font_size,
+        color=color,
         x=x, y=y,
         batch=batch,
-        group=fg_group)
+        group=group)
 
 
 fps_label = get_label(0, win.get_size()[1] - c.font_size)
-ping_label_1 = get_label(0, win.get_size()[1] - 2 * c.font_size)
-ping_label_2 = get_label(0, win.get_size()[1] - 3 * c.font_size)
-score_label_1 = get_label(0, 0)
-score_label_2 = get_label(0, c.font_size)
 player_number_label = get_label(0, 2 * c.font_size)
+
+# ping_label_1 = get_label(0, win.get_size()[1] - 2 * c.font_size)
+# ping_label_2 = get_label(0, win.get_size()[1] - 3 * c.font_size)
+ping_labels = [get_label(0, win.get_size()[1] - 2 * c.font_size),
+               get_label(0, win.get_size()[1] - 3 * c.font_size)]
+score_labels = [get_label(0, c.font_size),
+                get_label(0, 0)]
+score_animation_labels = [get_label(-1000, 0, color=(*c.player_colors[0], 255), group=player_group),
+                          get_label(-1000, 0, color=(*c.player_colors[1], 255), group=opponent_group)]
+# score_label_1 = get_label(0, 0)
+# score_label_2 = get_label(0, c.font_size)
 
 scores = [0, 0]
 
@@ -71,7 +85,7 @@ for _ in range(c.ant_amount):
     img.anchor_x = img.width // 2
     img.anchor_y = img.height // 2
     sprite = Sprite(img, 0, 0, batch=batch, group=ant_group)
-    sprite.update(0, 0, None, 1/c.ant_img_size)
+    sprite.update(0, 0, None, 1 / c.ant_img_size)
     circles.append(sprite)
 
 
@@ -90,9 +104,9 @@ def on_resize(width, height):
 
     if aspect_ratio_client > aspect_ratio_server:  # left, right margins  ##########
         # height is the limiting factor => width is what we adapt         # #    # #
-        client_field_size[0] = height * aspect_ratio_server               # #    # #
-        origin_coords[0] = (width - client_field_size[0]) // 2            # #    # #
-        scale_factor = client_field_size[0] / c.field_size[0]             ##########
+        client_field_size[0] = height * aspect_ratio_server  # #    # #
+        origin_coords[0] = (width - client_field_size[0]) // 2  # #    # #
+        scale_factor = client_field_size[0] / c.field_size[0]  ##########
 
         black_margins[0].width = origin_coords[0]
         black_margins[0].height = client_field_size[1]
@@ -125,16 +139,24 @@ def on_resize(width, height):
 
     fps_label.x = origin_coords[0]
     fps_label.y = origin_coords[1] + client_field_size[1] - c.font_size
-    ping_label_1.x = origin_coords[0]
-    ping_label_1.y = origin_coords[1] + client_field_size[1] - 2 * c.font_size
-    ping_label_2.x = origin_coords[0]
-    ping_label_2.y = origin_coords[1] + client_field_size[1] - 3 * c.font_size
+    for i, label in enumerate(ping_labels):
+        label.x = origin_coords[0]
+        label.y = origin_coords[1] + client_field_size[1] - (2 + i) * c.font_size
+
+    # ping_label_1.x = origin_coords[0]
+    # ping_label_1.y = origin_coords[1] + client_field_size[1] - 2 * c.font_size
+    # ping_label_2.x = origin_coords[0]
+    # ping_label_2.y = origin_coords[1] + client_field_size[1] - 3 * c.font_size
     player_number_label.x = origin_coords[0]
     player_number_label.y = origin_coords[1] + 2 * c.font_size
-    score_label_1.x = origin_coords[0]
-    score_label_1.y = origin_coords[1] + c.font_size
-    score_label_2.x = origin_coords[0]
-    score_label_2.y = origin_coords[1]
+    for label in score_labels:
+        label.x = origin_coords[0]
+        label.y = origin_coords[1]
+    score_labels[0].y += c.font_size
+    # score_label_1.x = origin_coords[0]
+    # score_label_1.y = origin_coords[1] + c.font_size
+    # score_label_2.x = origin_coords[0]
+    # score_label_2.y = origin_coords[1]
 
 
 @win.event
@@ -142,11 +164,10 @@ def on_draw():
     win.clear()
 
     fps_label.text = f'FPS: {clock.get_fps()}'
-    ping_label_1.text = f'Ping Player 1: {player_pings[0]}'
-    ping_label_2.text = f'Ping Player 2: {player_pings[1]}'
-    score_label_1.text = f'Score Player 1: {scores[0]}'
-    score_label_2.text = f'Score Player 2: {scores[1]}'
     player_number_label.text = f'You are Player {player_number + 1}'
+    for i in range(len(ping_labels)):
+        ping_labels[i].text = f'Ping Player {i + 1}: {player_pings[i]}'
+        score_labels[i].text = f'Score Player {i + 1}: {scores[i]}'
 
     batch.draw()
 
@@ -162,7 +183,7 @@ def get_center_circle(ant_shares):
         if player_number == 0:
             img = image.load(f'../res/img/circ_{int(100 * ant_shares)}.png')
         else:
-            img = image.load(f'../res/img/circ_{int(100 * (1-ant_shares))}.png')
+            img = image.load(f'../res/img/circ_{int(100 * (1 - ant_shares))}.png')
     img.anchor_x = img.width // 2
     img.anchor_y = img.height // 2
     return img
@@ -202,6 +223,28 @@ def set_target_states(target_states):  # Called after set_ants()
                  int(float(c.player_colors[i][2]) + float(255 - c.player_colors[i][2]) * (1. - progress)))
         else:
             target_circles[i].position = (-1000, -1000)
+
+
+#occupation_points = [None, None]
+
+
+def set_score_states(score_states):
+    if not np.isnan(sum(score_states)) and int(score_states[0]) == int(score_states[1]):
+        score_animation_labels[0].text = f'+{int(score_states[0])}'
+        score_animation_labels[1].text = f'+{int(score_states[1])}'
+        score_animation_labels[0].position = (int(player_mouse_circles[0].x - c.score_popup_offset),
+                                              int(player_mouse_circles[0].y))
+        score_animation_labels[1].position = (int(player_mouse_circles[0].x),
+                                              int(player_mouse_circles[0].y))
+        return
+    for i, state in enumerate(score_states):
+        if not np.isnan(state):
+            if score_animation_labels[i].x == -1000:
+                score_animation_labels[i].text = f'+{int(state)}'
+                score_animation_labels[i].position = (int(player_mouse_circles[i].x - c.score_popup_offset),
+                                                      int(player_mouse_circles[i].y))
+        else:
+            score_animation_labels[i].x = -1000
 
 
 def run():

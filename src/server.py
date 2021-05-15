@@ -7,6 +7,9 @@ import conf as c
 import engine as e
 import data_depositor
 
+
+#import data_depositor
+
 # TODO handle client disconnects
 
 
@@ -82,11 +85,11 @@ def get_game_state():
     target_state = e.get_target_state(server.player_pos)
     mouse_header = np.array([[*server.player_pos[0], target_state[0], server.player_ping[0]],
                              [*server.player_pos[1], target_state[1], server.player_ping[1]]])
-    score_header = np.array([*e.score, 0, 0])  # 0 values are currently unused
+    #score_header = np.array([*e.score, 0, 0])  # 0 values are currently unused
+    score_header = np.array([*e.score, *e.score_state])
     game_state = np.column_stack((e.pos, e.rad, e.shares))
     game_state = np.vstack((mouse_header, score_header, game_state))
     return game_state
-    #  game_state = pickle.dumps(game_state)
 
 
 def update(dt=0):

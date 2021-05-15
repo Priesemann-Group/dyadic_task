@@ -67,15 +67,18 @@ def consume_packet(dx):
     global player_number
     opponent_number = (player_number - 1) % 2
     target_states = [packet[0][2], packet[1][2]]
+    score_states = list(packet[2][2:].astype(float))
     if player_number == 1:  # In this case we are the second player
         target_states.reverse()
+        score_states.reverse()
     ui.scores = list(packet[2][:2].astype(float))
     ui.player_pings = list(packet[:2, 3])
     packet[:, :3] *= ui.scale_factor  # scale positions as well as radians
-    ui.player_mouse_circle.position = tuple(packet[player_number][:2] + ui.origin_coords)
-    ui.opponent_mouse_circle.position = tuple(packet[opponent_number][:2] + ui.origin_coords)
+    ui.player_mouse_circles[0].position = tuple(packet[player_number][:2] + ui.origin_coords)
+    ui.player_mouse_circles[1].position = tuple(packet[opponent_number][:2] + ui.origin_coords)
     ui.set_ants(packet[3:])
-    ui.set_target_states(target_states)
+    ui.set_target_states(target_states)  # should be called after set_ants()
+    ui.set_score_states(score_states)
 
 
 client = UdpClient()
