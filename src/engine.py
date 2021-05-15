@@ -256,7 +256,7 @@ def consume_occupation_dict(occupations, out):
             score[0], score[1] = shares_to_scores(shares[target_idx[0]])
             score_state[0], score_state[1] = shares_to_scores(shares[target_idx[0]])
             t = time.time()
-            score_animation_end[0], score_animation_end[1] = t+3, t+3
+            score_animation_end[0], score_animation_end[1] = t+c.occupied_animation_time, t+c.occupied_animation_time
             #score[0] += shares[target_idx[0]]  # TODO shares_to_scores
             #score[1] += 1-shares[target_idx[0]]
             out[0], out[1] = -1 * target_idx[0], -1 * target_idx[1]
