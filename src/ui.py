@@ -16,7 +16,6 @@ bg_group = OrderedGroup(0)
 ant_group = OrderedGroup(1)
 fg_group = OrderedGroup(2)
 target_group = OrderedGroup(3)
-#mouse_group = OrderedGroup(4)
 opponent_group = OrderedGroup(4)
 player_group = OrderedGroup(5)
 
@@ -28,9 +27,6 @@ black_margins = [
     Rectangle(0, 0, 1, 1, color=c.margin_color, batch=batch, group=fg_group),
     Rectangle(0, 0, 1, 1, color=c.margin_color, batch=batch, group=fg_group)
 ]
-
-#player_mouse_circle = Circle(0, 0, c.mouse_circle_radius, color=c.player_colors[0], batch=batch, group=player_group)
-#opponent_mouse_circle = Circle(0, 0, c.mouse_circle_radius, color=c.player_colors[1], batch=batch, group=opponent_group)
 
 player_mouse_circles = [Circle(0, 0, c.mouse_circle_radius, color=c.player_colors[0], batch=batch, group=player_group),
                         Circle(0, 0, c.mouse_circle_radius, color=c.player_colors[1], batch=batch, group=opponent_group)
@@ -58,16 +54,12 @@ def get_label(x, y, font_name=c.font_name, font_size=c.font_size, color=c.label_
 fps_label = get_label(0, win.get_size()[1] - c.font_size)
 player_number_label = get_label(0, 2 * c.font_size)
 
-# ping_label_1 = get_label(0, win.get_size()[1] - 2 * c.font_size)
-# ping_label_2 = get_label(0, win.get_size()[1] - 3 * c.font_size)
 ping_labels = [get_label(0, win.get_size()[1] - 2 * c.font_size),
                get_label(0, win.get_size()[1] - 3 * c.font_size)]
 score_labels = [get_label(0, c.font_size),
                 get_label(0, 0)]
 score_animation_labels = [get_label(-1000, 0, color=(*c.player_colors[0], 255), group=player_group),
                           get_label(-1000, 0, color=(*c.player_colors[1], 255), group=opponent_group)]
-# score_label_1 = get_label(0, 0)
-# score_label_2 = get_label(0, c.font_size)
 
 scores = [0, 0]
 
@@ -104,9 +96,9 @@ def on_resize(width, height):
 
     if aspect_ratio_client > aspect_ratio_server:  # left, right margins  ##########
         # height is the limiting factor => width is what we adapt         # #    # #
-        client_field_size[0] = height * aspect_ratio_server  # #    # #
-        origin_coords[0] = (width - client_field_size[0]) // 2  # #    # #
-        scale_factor = client_field_size[0] / c.field_size[0]  ##########
+        client_field_size[0] = height * aspect_ratio_server               # #    # #
+        origin_coords[0] = (width - client_field_size[0]) // 2            # #    # #
+        scale_factor = client_field_size[0] / c.field_size[0]             ##########
 
         black_margins[0].width = origin_coords[0]
         black_margins[0].height = client_field_size[1]
@@ -142,21 +134,12 @@ def on_resize(width, height):
     for i, label in enumerate(ping_labels):
         label.x = origin_coords[0]
         label.y = origin_coords[1] + client_field_size[1] - (2 + i) * c.font_size
-
-    # ping_label_1.x = origin_coords[0]
-    # ping_label_1.y = origin_coords[1] + client_field_size[1] - 2 * c.font_size
-    # ping_label_2.x = origin_coords[0]
-    # ping_label_2.y = origin_coords[1] + client_field_size[1] - 3 * c.font_size
     player_number_label.x = origin_coords[0]
     player_number_label.y = origin_coords[1] + 2 * c.font_size
     for label in score_labels:
         label.x = origin_coords[0]
         label.y = origin_coords[1]
     score_labels[0].y += c.font_size
-    # score_label_1.x = origin_coords[0]
-    # score_label_1.y = origin_coords[1] + c.font_size
-    # score_label_2.x = origin_coords[0]
-    # score_label_2.y = origin_coords[1]
 
 
 @win.event
@@ -225,11 +208,10 @@ def set_target_states(target_states):  # Called after set_ants()
             target_circles[i].position = (-1000, -1000)
 
 
-#occupation_points = [None, None]
-
-
-def set_score_states(score_states):
-    if not np.isnan(sum(score_states)) and int(score_states[0]) == int(score_states[1]):
+def set_score_states(score_states, target_states):
+    if not np.isnan(sum(score_states)) \
+            and int(target_states[0]) == int(target_states[1]) \
+            and score_animation_labels[0].x == -1000:
         score_animation_labels[0].text = f'+{int(score_states[0])}'
         score_animation_labels[1].text = f'+{int(score_states[1])}'
         score_animation_labels[0].position = (int(player_mouse_circles[0].x - c.score_popup_offset),

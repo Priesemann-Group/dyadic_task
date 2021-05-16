@@ -27,10 +27,10 @@ class UdpClient(DatagramProtocol):
             self.transport.connect('127.0.0.1', c.server_port)
         else:
             self.transport.connect(c.server_ip, c.server_port)
-        self.transport.write(pickle.dumps((0, 0, 0)))
+        self.transport.write(pickle.dumps((0, 0, 0, 0)))
 
     def send_mouse_pos(self, pos):
-        self.transport.write(pickle.dumps((*pos, int(self.ping))))
+        self.transport.write(pickle.dumps((*pos, int(self.ping), ui.scale_factor)))
 
     def request_ping(self, dx):
         self.ping_request_start = time.time()
@@ -64,6 +64,7 @@ def get_newest_packet():
 
 def consume_packet(dx):
     packet = get_newest_packet()
+    packet = packet[1:]  # throw first, general header away
     global player_number
     opponent_number = (player_number - 1) % 2
     target_states = [packet[0][2], packet[1][2]]
@@ -78,7 +79,7 @@ def consume_packet(dx):
     ui.player_mouse_circles[1].position = tuple(packet[opponent_number][:2] + ui.origin_coords)
     ui.set_ants(packet[3:])
     ui.set_target_states(target_states)  # should be called after set_ants()
-    ui.set_score_states(score_states)
+    ui.set_score_states(score_states, target_states)
 
 
 client = UdpClient()

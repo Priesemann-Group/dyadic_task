@@ -15,10 +15,11 @@ import data_depositor
 
 class Server(DatagramProtocol):
     def __init__(self):
-        self.player_addrs = [('empty', 4242), ('empty', 4242)]
-        self.player_pos = [(0, 0), (0, 0)]
+        self.player_addrs = [('', 0), ('', 0)]
         self.player_last_contact = [-1., -1.]
+        self.player_pos = [(0, 0), (0, 0)]
         self.player_ping = [-1., -1.]
+        self.player_scale_factor = [-1., -1.]
         self.past_update_count = 0
 
     def startProtocol(self):
@@ -57,9 +58,10 @@ class Server(DatagramProtocol):
 
     def consume_client_packet(self, packet, client_idx):
         self.player_last_contact[client_idx] = time.time()
-        x, y, ping = packet
+        x, y, ping, scale_factor = packet
         self.player_pos[client_idx] = (x, y)
         self.player_ping[client_idx] = ping
+        self.player_scale_factor[client_idx] = scale_factor
 
     def send_packet(self, game_state):
         packet = pickle.dumps(game_state)
@@ -70,25 +72,29 @@ class Server(DatagramProtocol):
     def check_player_contact(self):
         t = time.time()
         for i, lc in enumerate(self.player_last_contact):
-            if t-lc > c.time_until_disconnect:
+            if lc > 0. and t-lc > c.time_until_disconnect:
                 self.player_last_contact[i] = -1.
+                self.player_pos[i] = (-1000, -1000)
+                self.player_ping[i] = -1
+                self.player_scale_factor[i] = -1.
+                self.new_round(reset=True)
                 e.score[i] = 0
         return self.player_last_contact[0] > 0. or self.player_last_contact[1] > 0.
 
 
 e.load()
-#data_depositor.init()
 server = Server()
 
 
 def get_game_state():
     target_state = e.get_target_state(server.player_pos)
-    mouse_header = np.array([[*server.player_pos[0], target_state[0], server.player_ping[0]],
+    general_header = np.array([*server.player_scale_factor, 0, 0])  # last value is unused
+    player_header = np.array([[*server.player_pos[0], target_state[0], server.player_ping[0]],
                              [*server.player_pos[1], target_state[1], server.player_ping[1]]])
-    #score_header = np.array([*e.score, 0, 0])  # 0 values are currently unused
     score_header = np.array([*e.score, *e.score_state])
     game_state = np.column_stack((e.pos, e.rad, e.shares))
-    game_state = np.vstack((mouse_header, score_header, game_state))
+    game_state = np.vstack((general_header, player_header, score_header, game_state))
+    game_state[0, 2] = time.time()  # set creation time stamp in general_header
     return game_state
 
 

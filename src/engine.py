@@ -1,14 +1,16 @@
-import time
-import conf as c
 import random as r
+import time
+
 import numpy as np
 from numba import njit
+
+import conf as c
 
 pos = np.full((c.ant_amount, 2), np.nan, dtype='float64')
 vel = np.full((c.ant_amount, 2), np.nan, dtype='float64')
 rad = np.full(c.ant_amount, np.nan, dtype='float64')
 
-# nan => botch players can occupy the point
+# nan => both players can occupy the point
 # 0   => player 0 owns the point
 # 1   => player 1 owns the point
 # everything between: shared between the players
@@ -62,9 +64,8 @@ def collision_calc(ants, radians):  # unused
 
 
 def load():
-    global pos, vel, rad
-    #collision_calc(pos, rad)
-    accelerations_calc(pos)
+    collision_calc(pos, rad)
+    #accelerations_calc(pos)
     euclid_dist(np.array([0, 0]))
     gaussian(0.)
 
@@ -83,7 +84,7 @@ def respawn_ants():
 
 
 def add_ant(x, y, angle, radius, share=None):
-    global pos, vel
+    global pos, vel, rad
     i = np.where(np.isnan(pos[:, 0]))[0][0]  # Assumption: There is always at least one nan!
     pos[i] = np.array([x, y], dtype='float64')
     vel[i] = np.array([np.cos(angle), np.sin(angle)]) * c.velocity
@@ -176,13 +177,13 @@ def update_animations():
 
 def update(dt):
     global pos, vel
-    acc = accelerations_calc(pos)
-    vel += acc
-    for v in vel:
-        v /= euclid_dist(v)
-        v *= c.velocity
+    #acc = accelerations_calc(pos)
+    #vel += acc
+    #for v in vel:
+    #    v /= euclid_dist(v)
+    #    v *= c.velocity
     pos += vel
-    # collisions()
+    collisions()
     correct_to_boundaries()
     update_animations()
 
@@ -222,7 +223,6 @@ def occupied(player_idx):
 def get_target_state(mouse_positions):
     global target_idx, target_occupation_date, score
     out = [-1, -1]
-    #out = [np.nan, np.nan]
     occupations = {}
     for player_idx, mouse_pos in enumerate(mouse_positions):
         mouse_pos = np.array(mouse_pos)
@@ -245,7 +245,12 @@ def get_target_state(mouse_positions):
 
 
 def shares_to_scores(s):
-    return c.cooperative_reward * s, c.cooperative_reward * (1-s)  # TODO improve
+    reward_p1 = c.cooperative_reward * s
+    reward_p2 = c.cooperative_reward * (1 - s)
+    if reward_p1 - int(reward_p1) > 0.5:
+        return int(reward_p1 + 1), int(reward_p2)
+    else:
+        return int(reward_p1), int(reward_p2 + 1)
 
 
 def consume_occupation_dict(occupations, out):
@@ -257,14 +262,12 @@ def consume_occupation_dict(occupations, out):
             score_state[0], score_state[1] = shares_to_scores(shares[target_idx[0]])
             t = time.time()
             score_animation_end[0], score_animation_end[1] = t+c.occupied_animation_time, t+c.occupied_animation_time
-            #score[0] += shares[target_idx[0]]  # TODO shares_to_scores
-            #score[1] += 1-shares[target_idx[0]]
             out[0], out[1] = -1 * target_idx[0], -1 * target_idx[1]
             for player_idx in [0, 1]:
                 target_idx[player_idx] = -1
                 target_occupation_date[player_idx] = 0.
         else:  # Edge case: Both players occupied a not shared target within the same time (< 1/60s)
-            score[0] += .5
+            score[0] += .5  # TODO
             score[1] += .5
     else:  # Consume occupations
         for player_idx in occupations.keys():

@@ -39,7 +39,7 @@ time_until_disconnect = 60
 output_folder_name = 'game_records'
 date_format = '%d-%m-%y_%H-%M-%S'
 
-_rows = ant_amount + 3  # For the 3 headers
+_rows = ant_amount + 4  # For the 4 headers
 _cols = 4  # For x, y, rad, share values for each ant
 packet_shape = (_rows, _cols)
 
