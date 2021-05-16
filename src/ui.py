@@ -72,6 +72,11 @@ circles = []
 player_number = -2
 player_pings = [-1, -1]
 
+from src.ui.ui import OccupationSoundPlayer
+
+occupation_sound_player = [OccupationSoundPlayer(c.player_volumes[0]),
+                           OccupationSoundPlayer(c.player_volumes[1])]
+
 for _ in range(c.ant_amount):
     img = image.load('../res/img/circ.png')
     img.anchor_x = img.width // 2
@@ -129,6 +134,10 @@ def on_resize(width, height):
     background.height = client_field_size[1]
     background.x, background.y = tuple(origin_coords)
 
+    replace_labels()
+
+
+def replace_labels():
     fps_label.x = origin_coords[0]
     fps_label.y = origin_coords[1] + client_field_size[1] - c.font_size
     for i, label in enumerate(ping_labels):
@@ -193,9 +202,11 @@ def set_ants(packet):
         circles[i].update(-1000, -1000, None, 0.)
 
 
-def set_target_states(target_states):  # Called after set_ants()
+def set_target_states(target_states, scored_states):  # Called after set_ants()
     for i, t_s in enumerate(target_states):
-        if t_s > -.5:
+        if t_s > -.5:  # we are on a target
+            if target_circles[i].x == -1000:  # just arrived on a new target
+                occupation_sound_player[i].occupying()
             idx = int(t_s)
             progress = t_s - idx
             target_circles[i].position = circles[idx].position
@@ -205,6 +216,11 @@ def set_target_states(target_states):  # Called after set_ants()
                  int(float(c.player_colors[i][1]) + float(255 - c.player_colors[i][1]) * (1. - progress)),
                  int(float(c.player_colors[i][2]) + float(255 - c.player_colors[i][2]) * (1. - progress)))
         else:
+            if target_circles[i].x != -1000:  # target is away
+                if np.isnan(scored_states[i]):  # because we lost it
+                    occupation_sound_player[i].slipped_off()
+                else:  # because we occupied it
+                    occupation_sound_player[i].scored()
             target_circles[i].position = (-1000, -1000)
 
 
@@ -221,11 +237,11 @@ def set_score_states(score_states, target_states):
         return
     for i, state in enumerate(score_states):
         if not np.isnan(state):
-            if score_animation_labels[i].x == -1000:
+            if score_animation_labels[i].x == -1000:  # Scored!
                 score_animation_labels[i].text = f'+{int(state)}'
                 score_animation_labels[i].position = (int(player_mouse_circles[i].x - c.score_popup_offset),
                                                       int(player_mouse_circles[i].y))
-        else:
+        else:  # remove old score popup labels
             score_animation_labels[i].x = -1000
 
 
