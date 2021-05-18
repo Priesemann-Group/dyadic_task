@@ -1,7 +1,7 @@
 from pyglet.media import load, Player
 from os.path import realpath, dirname
 
-dir_path = dirname(realpath(__file__)) + '/../../res/sound/'
+dir_path = dirname(realpath(__file__)) + '/../res/sound/'
 
 occupying_sound = load(dir_path + 'occupying.ogg', streaming=False)
 scored_sound = load(dir_path + 'scored.ogg', streaming=False)
@@ -12,7 +12,7 @@ class OccupationSoundPlayer(Player):
     def __init__(self, volume):
         super().__init__()
         self._volume = volume
-        self.reward_player = Player()
+        self._reward_player = Player()
 
     def _force_play(self, sound):
         self.delete()
@@ -27,7 +27,6 @@ class OccupationSoundPlayer(Player):
         self._force_play(slipped_off_sound)
 
     def scored(self):
-        #self._force_play(scored_sound)
-        self.reward_player.queue(scored_sound)
-        self.reward_player.play()
+        self._reward_player.queue(scored_sound)
+        self._reward_player.play()
 

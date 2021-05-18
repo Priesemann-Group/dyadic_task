@@ -2,15 +2,18 @@ import pickle
 import sys
 import time
 
-import ui
+from ui import UI
 import conf as c
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor
 from threading import Thread
 from queue import Queue
 
+from pyglet import app, clock
+
 rec_packets = Queue()
-player_number = None
+player_idx = None
+opponent_idx = None
 
 
 class UdpClient(DatagramProtocol):
@@ -30,18 +33,19 @@ class UdpClient(DatagramProtocol):
         self.transport.write(pickle.dumps((0, 0, 0, 0)))
 
     def send_mouse_pos(self, pos):
-        self.transport.write(pickle.dumps((*pos, int(self.ping), ui.scale_factor)))
+        self.transport.write(pickle.dumps((*pos, int(self.ping), ui.get_scale_factor())))
 
     def request_ping(self, dx):
         self.ping_request_start = time.time()
         self.transport.write(pickle.dumps(b'ping request'))
 
     def datagramReceived(self, datagram, address):
-        global player_number
-        if player_number is None:
-            player_number = pickle.loads(datagram)
-            ui.player_number = player_number
-            print(f'this client got player number: {player_number}')
+        global player_idx, opponent_idx
+        if player_idx is None:
+            player_idx = pickle.loads(datagram)
+            opponent_idx = (player_idx - 1) % 2
+            ui.set_player_idx(player_idx)
+            print(f'this client got player number: {player_idx}')
         else:
             packet = pickle.loads(datagram)
             if str(packet) == str(b'ping request answer'):
@@ -65,37 +69,31 @@ def get_newest_packet():
 def consume_packet(dx):
     packet = get_newest_packet()
     packet = packet[1:]  # throw first, general header away
-    global player_number
-    opponent_number = (player_number - 1) % 2
-    target_states = [packet[0][2], packet[1][2]]
-    score_states = list(packet[2][2:].astype(float))
-    if player_number == 1:  # In this case we are the second player
+    target_states = list(packet[:2, 2])
+    score_states = list(packet[2, 2:])
+    if player_idx == 1:  # In this case we are the second player
         target_states.reverse()
         score_states.reverse()
-    ui.scores = list(packet[2][:2].astype(float))
-    ui.player_pings = list(packet[:2, 3])
-    packet[:, :3] *= ui.scale_factor  # scale positions as well as radians
-    ui.player_mouse_circles[0].position = tuple(packet[player_number][:2] + ui.origin_coords)
-    ui.player_mouse_circles[1].position = tuple(packet[opponent_number][:2] + ui.origin_coords)
-    ui.set_ants(packet[3:])
-    ui.set_target_states(target_states)  # should be called after set_ants()
-    ui.set_score_states(score_states, target_states)
+    ui.set_values(
+        player_pos=packet[player_idx, :2],
+        opponent_pos=packet[opponent_idx, :2],
+        target_states=target_states,
+        score_states=score_states,
+        scores=list(packet[2, :2]),
+        pings=list(packet[:2, 3]),
+        ant_pos=packet[3:, :2],
+        ant_rad=packet[3:, 2],
+        ant_shares=packet[3:, 3])
 
 
 client = UdpClient()
-
-
-@ui.win.event
-def on_mouse_motion(x, y, dx, dy):  # TODO handle high res input
-    client.send_mouse_pos(((x - ui.origin_coords[0]) / ui.scale_factor,
-                           (y - ui.origin_coords[1]) / ui.scale_factor))
-
+ui = UI(debug_overlay=True,
+        on_motion=client.send_mouse_pos)
 
 reactor.listenUDP(0, client)
 Thread(target=reactor.run,
-       kwargs={"installSignalHandlers": False},
-       ).start()
+       kwargs={"installSignalHandlers": False},).start()
 
-ui.schedule_interval(consume_packet, 2 ** -8)
-ui.schedule_interval(client.request_ping, .5)
-ui.run()
+clock.schedule_interval(consume_packet, 2 ** -8)
+clock.schedule_interval(client.request_ping, .5)
+app.run()

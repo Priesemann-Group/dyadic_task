@@ -4,7 +4,7 @@ ant_amount = 10
 min_radius = 42
 max_radius = 60
 velocity = 3
-time_to_occupy = .5
+time_to_occupy = .5  # TODO back to .5
 occupied_animation_time = .3  # should be < time_to_occupy
 
 competitive_reward = 1
@@ -16,18 +16,22 @@ update_amount = pos_updates_ps * 20  # 20 seconds
 # Appearance
 font_name = 'Arial'
 font_size = 20
-label_color = (0, 0, 0, 255)
+font_color = (0, 0, 0, 255)
 background_color = (255, 255, 255)
 margin_color = (0, 0, 0)
-mouse_circle_radius = 5
+player_radius = 5
 ant_color = (100, 100, 200)
 target_opacity = 64
-score_popup_offset = 38  # TODO find dynamic solution
+popup_height = 20
 
 player_colors = [
     (100, 100, 100),  # clients player color
     (200, 100, 100)   # opponents color
 ]
+
+# Sound
+player_volumes = [1., .4]
+
 
 # Server configs
 field_size = (1920, 1080)
