@@ -5,9 +5,9 @@ from pyglet import image
 from pyglet.sprite import Sprite
 from pyglet.shapes import Circle
 from pyglet.graphics import Batch, OrderedGroup
-from sounds import OccupationSoundPlayer
-from ui_elements import TargetIndicator, PopUpLabel
-from ui_window import ScaleFieldWindow
+from ui.sounds import OccupationSoundPlayer
+from ui.elements import TargetIndicator, PopUpLabel
+from ui.window import ScaleFieldWindow
 
 
 class UI:

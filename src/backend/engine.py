@@ -4,7 +4,7 @@ import time
 import numpy as np
 from numba import njit
 
-import conf as c
+import configuration.conf as c
 
 pos = np.full((c.ant_amount, 2), np.nan, dtype='float64')
 vel = np.full((c.ant_amount, 2), np.nan, dtype='float64')
