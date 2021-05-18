@@ -56,6 +56,9 @@ class UI:
     def get_scale_factor(self):
         return self._win.get_scale_factor()
 
+    def close_window(self):
+        self._win.close()
+
     def on_close(self):
         self._on_close_func()
 

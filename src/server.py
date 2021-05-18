@@ -25,32 +25,38 @@ class Server(DatagramProtocol):
         reactor.callLater(1 / c.pos_updates_ps, update)
 
     def datagramReceived(self, data, addr):
-
         packet = pickle.loads(data)
-        if packet == b'ping request':
-            self.transport.write(pickle.dumps(b'ping request answer'), addr)
-            return
-
-        if not self.check_player_contact():  # if the first client connects the game loop starts again
-            reactor.callLater(1 / c.pos_updates_ps, update)
-
-        if addr not in self.player_addrs:  # unknown player, try to register
-            for i, lc in enumerate(self.player_last_contact):
-                if lc < 0.:  # register new player
-                    self.player_addrs[i] = addr
-                    self.consume_client_packet(packet, i)
-                    self.transport.write(pickle.dumps(i), addr)
-                    self.new_round(reset=True)
-                    return
-            # TODO send server is full message
+        if isinstance(packet, bytes):
+            self.process_message(packet, addr)
         else:
             idx = self.player_addrs.index(addr)
             self.consume_client_packet(packet, idx)
 
+    def process_message(self, msg, addr):
+        if msg == b'ping request':
+            self.transport.write(pickle.dumps(b'ping request answer'), addr)
+        elif msg == b'disconnect':
+            self.deregister_player(self.player_addrs.index(addr))
+        elif msg == b'connect':
+            if not self.check_player_contact():  # if the first client connects the game loop starts again
+                reactor.callLater(1 / c.pos_updates_ps, update)
+            player_idx = self.register_new_player(addr)
+            self.transport.write(pickle.dumps(player_idx), addr)
+
+    def register_new_player(self, addr):
+        print(f'register new player is called, addr: {addr}')
+        for player_idx, lc in enumerate(self.player_last_contact):
+            if lc < 0.:
+                self.player_addrs[player_idx] = addr
+                self.player_last_contact[player_idx] = time.time()
+                self.new_round(reset=True)
+                return player_idx
+        # TODO send server is full message
+
     def new_round(self, reset=False):
         self.past_update_count = 0
         if reset and data_depositor.file is not None:
-            data_depositor.close()
+            data_depositor.close()  # To delete invalid game recording
         data_depositor.new_file()
         e.respawn_ants()
         e.score = [0, 0]
@@ -72,13 +78,17 @@ class Server(DatagramProtocol):
         t = time.time()
         for i, lc in enumerate(self.player_last_contact):
             if lc > 0. and t-lc > c.time_until_disconnect:
-                self.player_last_contact[i] = -1.
-                self.player_pos[i] = (-1000, -1000)
-                self.player_ping[i] = -1
-                self.player_scale_factor[i] = -1.
-                self.new_round(reset=True)
-                e.score[i] = 0
-        return self.player_last_contact[0] > 0. or self.player_last_contact[1] > 0.
+                self.deregister_player(i)
+        still_contact = self.player_last_contact[0] > 0. or self.player_last_contact[1] > 0.
+        return still_contact
+
+    def deregister_player(self, player_idx):
+        self.player_last_contact[player_idx] = -1.
+        self.player_pos[player_idx] = (-1000, -1000)
+        self.player_ping[player_idx] = -1
+        self.player_scale_factor[player_idx] = -1.
+        self.new_round(reset=True)
+        e.score[player_idx] = 0
 
 
 e.load()

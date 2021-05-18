@@ -20,12 +20,15 @@ class ScaleFieldWindow:
                                Rectangle(0, 0, 1, 1, color=conf.margin_color, batch=batch, group=fg_group)]
         self.event(self.on_resize)
 
+    def close(self):
+        self._window.close()
+
     def get_scale_factor(self):
         return self._scale_factor
 
     def set_player_idx(self, player_idx):
         if self._debug_overlay:
-            self._debug_labels.player_number = player_idx
+            self._debug_labels._player_number = player_idx
 
     def event(self, func):
         return self._window.event(func)

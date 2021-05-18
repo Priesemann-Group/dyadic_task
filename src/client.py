@@ -11,17 +11,27 @@ from queue import Queue
 
 from pyglet import app, clock
 
-rec_packets = Queue()
-end_reactor_thread = False
-player_idx = None
-opponent_idx = None
-
 
 class UdpClient(DatagramProtocol):
-
     def __init__(self):
-        self.ping = 0.
-        self.ping_request_start = -1.
+        self._ping = 0.
+        self._ping_request_start = -1.
+        self._rec_packets = Queue()
+        self._end_reactor_thread = False
+        self._player_idx = -1
+        self._opponent_idx = None
+
+        self._ui = UI(debug_overlay=True,
+                      on_motion=self._send_mouse_pos,
+                      on_close=self._close_form_ui_thread)
+
+        reactor.listenUDP(0, self)
+        Thread(target=reactor.run,
+               kwargs={"installSignalHandlers": False}).start()
+
+        clock.schedule_interval(self._consume_packet, 2 ** -8)
+        clock.schedule_interval(self._request_ping, .5)
+        app.run()
 
     def startProtocol(self):
         """
@@ -31,87 +41,84 @@ class UdpClient(DatagramProtocol):
             self.transport.connect('127.0.0.1', c.server_port)
         else:
             self.transport.connect(c.server_ip, c.server_port)
-        self.transport.write(pickle.dumps((0, 0, 0, 0)))
-        self.check_if_ui_exits()
-
-    def check_if_ui_exits(self):
-        reactor.callLater(.2, self.check_if_ui_exits)
-        if end_reactor_thread:
-            reactor.stop()
-
-    def send_mouse_pos(self, pos):
-        self.send((*pos, int(self.ping), ui.get_scale_factor()))
-
-    def request_ping(self, dx):
-        self.send(b'ping request')
-
-    def send(self, packet):
-        if self.transport is not None:  # transport is None if server is closed
-            self.transport.write(pickle.dumps(packet))
+        #self.transport.write(pickle.dumps((0, 0, 0, 0)))
+        self._send(b'connect')
+        self._check_if_ui_exits()
 
     def datagramReceived(self, datagram, address):
-        global player_idx, opponent_idx
-        if player_idx is None:
-            player_idx = pickle.loads(datagram)
-            opponent_idx = (player_idx - 1) % 2
-            ui.set_player_idx(player_idx)
-            print(f'this client got player number: {player_idx}')
+        #print(self._player_idx)
+        if self._player_idx == -1:
+            print(datagram)
+            print(type(datagram))
+            self._player_idx = int(pickle.loads(datagram))  # First datagram contains the index
+            self._opponent_idx = (self._player_idx - 1) % 2
+            self._ui.set_player_idx(self._player_idx)
+            print(f'this client got player number: {self._player_idx}')
         else:
             packet = pickle.loads(datagram)
             if str(packet) == str(b'ping request answer'):
-                self.ping = (time.time() - self.ping_request_start) * 1000  # in milliseconds
-                self.ping_request_start = -1.
+                self._ping = (time.time() - self._ping_request_start) * 1000  # in milliseconds
+                self._ping_request_start = -1.
             else:
-                rec_packets.put(packet)
+                self._rec_packets.put(packet)
 
     def connectionRefused(self):
-        print("No one listening")  # TODO
-        reactor.close()
+        print("Connection Refused")
+        self._close()
 
+    def _check_if_ui_exits(self):
+        if self._end_reactor_thread:
+            self._send(b'disconnect')
+            self._close()
+        reactor.callLater(.2, self._check_if_ui_exits)
 
-def get_newest_packet():
-    if rec_packets.qsize() > 1:
-        print(f'Client skipped {rec_packets.qsize() - 1} packet(s).')
-        for _ in range(rec_packets.qsize() - 1):
-            rec_packets.get()
-    return rec_packets.get()
+    def _send_mouse_pos(self, pos):
+        self._send((*pos, int(self._ping), self._ui.get_scale_factor()))
 
+    def _request_ping(self, dx):
+        self._ping_request_start = time.time()
+        self._send(b'ping request')
 
-def close():
-    global end_reactor_thread
-    end_reactor_thread = True
+    def _send(self, packet):
+        if self.transport is not None:  # transport is None if server is closed
+            self.transport.write(pickle.dumps(packet))
+        else:
+            print('No connection to server')
+            self._close()
 
+    def _get_newest_packet(self):
+        if self._rec_packets.qsize() > 1:
+            print(f'Client skipped {self._rec_packets.qsize() - 1} packet(s).')
+            for _ in range(self._rec_packets.qsize() - 1):
+                self._rec_packets.get()
+        return self._rec_packets.get()
 
-def consume_packet(dx):
-    if rec_packets.qsize() > 0:
-        packet = get_newest_packet()
-        packet = packet[1:]  # throw first, general header away
-        target_states = list(packet[:2, 2])
-        score_states = list(packet[2, 2:])
-        if player_idx == 1:  # In this case we are the second player
-            target_states.reverse()
-            score_states.reverse()
-        ui.set_values(
-            player_pos=packet[player_idx, :2],
-            opponent_pos=packet[opponent_idx, :2],
-            target_states=target_states,
-            score_states=score_states,
-            scores=list(packet[2, :2]),
-            pings=list(packet[:2, 3]),
-            ant_pos=packet[3:, :2],
-            ant_rad=packet[3:, 2],
-            ant_shares=packet[3:, 3])
+    def _close(self):
+        self._ui.close_window()
+        reactor.stop()
+
+    def _close_form_ui_thread(self):
+        self._end_reactor_thread = True
+
+    def _consume_packet(self, dx):
+        if self._rec_packets.qsize() > 0:
+            packet = self._get_newest_packet()
+            packet = packet[1:]  # throw first, general header away
+            target_states = list(packet[:2, 2])
+            score_states = list(packet[2, 2:])
+            if self._player_idx == 1:  # In this case we are the second player
+                target_states.reverse()
+                score_states.reverse()
+            self._ui.set_values(
+                player_pos=packet[self._player_idx, :2],
+                opponent_pos=packet[self._opponent_idx, :2],
+                target_states=target_states,
+                score_states=score_states,
+                scores=list(packet[2, :2]),
+                pings=list(packet[:2, 3]),
+                ant_pos=packet[3:, :2],
+                ant_rad=packet[3:, 2],
+                ant_shares=packet[3:, 3])
 
 
 client = UdpClient()
-ui = UI(debug_overlay=True,
-        on_motion=client.send_mouse_pos,
-        on_close=close)
-
-reactor.listenUDP(0, client)
-Thread(target=reactor.run,
-       kwargs={"installSignalHandlers": False}).start()
-
-clock.schedule_interval(consume_packet, 2 ** -8)
-clock.schedule_interval(client.request_ping, .5)
-app.run()
