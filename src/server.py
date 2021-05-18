@@ -4,7 +4,6 @@ import numpy as np
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor
 from configuration import conf as c
-#from configuration import conf
 from backend import engine as e, data_depositor
 
 
@@ -95,6 +94,7 @@ def get_game_state():
     game_state = np.column_stack((e.pos, e.rad, e.shares))
     game_state = np.vstack((general_header, player_header, score_header, game_state))
     game_state[0, 2] = time.time()  # set creation time stamp in general_header
+
     return game_state
 
 
@@ -104,8 +104,9 @@ def update(dt=0):
         server.past_update_count += 1
         if server.past_update_count == c.update_amount:
             server.new_round()
-        e.update(dt)
+        #e.update(dt)
         game_state = get_game_state()
+        e.update(dt)
         server.send_packet(game_state)
         data_depositor.deposit(game_state)
 

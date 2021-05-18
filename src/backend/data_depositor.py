@@ -31,10 +31,6 @@ def new_file():
     file.create_earray(file.root, 'data', atom, enlargeable_array_shape)  # TODO use name for storing different games
 
 
-#def init():
-#    global file, path
-
-
 def deposit(game_state):
     file.root.data.append(game_state[None, :])
 

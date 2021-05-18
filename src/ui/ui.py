@@ -114,7 +114,7 @@ class UI:
                 self._ant_sprites[i].image = self._get_center_circle(ant_shares)
                 self._ant_shares_mirror[i] = ant_shares
             else:  # No one is none
-                if int(ant_shares * 100) != int(self._ant_shares_mirror[i] * 100):
+                if int(ant_shares * 1000) != int(self._ant_shares_mirror[i] * 1000):
                     self._ant_sprites[i].image = self._get_center_circle(ant_shares)
                     self._ant_shares_mirror[i] = ant_shares
 

@@ -182,7 +182,7 @@ def update(dt):
     #for v in vel:
     #    v /= euclid_dist(v)
     #    v *= c.velocity
-    pos += vel
+    #pos += vel
     collisions()
     correct_to_boundaries()
     update_animations()
@@ -256,13 +256,14 @@ def shares_to_scores(s):
 def consume_occupation_dict(occupations, out):
     if len(occupations) == 2 and occupations[0] == occupations[1]:  # Both players occupied the same target
         if not np.isnan(shares[target_idx[0]]):  # A shared target is occupied
-            pos[target_idx[0]] = np.array([np.nan, np.nan])
-            add_rand_ant(r.random())
             score[0], score[1] = shares_to_scores(shares[target_idx[0]])
             score_state[0], score_state[1] = shares_to_scores(shares[target_idx[0]])
             t = time.time()
             score_animation_end[0], score_animation_end[1] = t+c.occupied_animation_time, t+c.occupied_animation_time
             out[0], out[1] = -1 * target_idx[0], -1 * target_idx[1]
+            # delete shared ant and create a new one
+            pos[target_idx[0]] = np.array([np.nan, np.nan])
+            add_rand_ant(r.random())
             for player_idx in [0, 1]:
                 target_idx[player_idx] = -1
                 target_occupation_date[player_idx] = 0.
