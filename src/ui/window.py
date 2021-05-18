@@ -2,7 +2,7 @@ from pyglet.window import Window
 from pyglet.shapes import Rectangle
 from pyglet.text import Label
 from pyglet import clock
-import conf
+from configuration import conf
 import numpy
 
 

@@ -1,6 +1,6 @@
 import numpy as np
 
-import conf as c
+from configuration import conf as c
 from pyglet import image
 from pyglet.sprite import Sprite
 from pyglet.shapes import Circle

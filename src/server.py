@@ -3,9 +3,9 @@ import pickle
 import numpy as np
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor
-import conf as c
-import engine as e
-import data_depositor
+from configuration import conf as c
+#from configuration import conf
+from backend import engine as e, data_depositor
 
 
 #import data_depositor

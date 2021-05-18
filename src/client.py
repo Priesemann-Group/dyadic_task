@@ -2,8 +2,8 @@ import pickle
 import sys
 import time
 
-from ui import UI
-import conf as c
+from ui.ui import UI
+from configuration import conf as c
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor
 from threading import Thread

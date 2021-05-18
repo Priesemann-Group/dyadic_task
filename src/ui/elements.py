@@ -1,6 +1,6 @@
 from pyglet.shapes import Circle
 from pyglet.text import Label
-import conf
+from configuration import conf
 
 
 class TargetIndicator(Circle):
