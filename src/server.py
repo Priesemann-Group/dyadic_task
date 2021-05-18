@@ -104,9 +104,8 @@ def update(dt=0):
         server.past_update_count += 1
         if server.past_update_count == c.update_amount:
             server.new_round()
-        #e.update(dt)
-        game_state = get_game_state()
         e.update(dt)
+        game_state = get_game_state()
         server.send_packet(game_state)
         data_depositor.deposit(game_state)
 

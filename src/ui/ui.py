@@ -9,8 +9,9 @@ from ui.window import ScaleFieldWindow
 
 
 class UI:
-    def __init__(self, debug_overlay, on_motion):
-        self._on_motion = on_motion
+    def __init__(self, debug_overlay, on_motion, on_close):
+        self._on_motion_func = on_motion
+        self._on_close_func = on_close
 
         self._bg_group = OrderedGroup(0)
         self._ant_group = OrderedGroup(1)
@@ -36,6 +37,8 @@ class UI:
         self._ants = self._generate_ants()
 
         # Register event handlers
+        if self._on_close_func is not None:  # TODO del this
+            self._win.event(self.on_close)
         self._win.event(self.on_draw)
         self._win.event(self.on_mouse_motion)
 
@@ -53,12 +56,15 @@ class UI:
     def get_scale_factor(self):
         return self._win.get_scale_factor()
 
-    def on_mouse_motion(self, x, y, dx, dy):  # Calls clients function to send position to server
-        self._on_motion(tuple(self._win.to_win_coordinates((x, y), reverse=True)))
+    def on_close(self):
+        self._on_close_func()
 
     def on_draw(self):
         self._win.on_draw()
         self._batch.draw()
+
+    def on_mouse_motion(self, x, y, dx, dy):  # Calls clients function to send position to server
+        self._on_motion_func(tuple(self._win.to_win_coordinates((x, y), reverse=True)))
 
     def set_player_idx(self, player_idx):
         self._player_idx = player_idx

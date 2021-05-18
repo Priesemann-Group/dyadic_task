@@ -12,6 +12,7 @@ from queue import Queue
 from pyglet import app, clock
 
 rec_packets = Queue()
+end_reactor_thread = False
 player_idx = None
 opponent_idx = None
 
@@ -31,13 +32,22 @@ class UdpClient(DatagramProtocol):
         else:
             self.transport.connect(c.server_ip, c.server_port)
         self.transport.write(pickle.dumps((0, 0, 0, 0)))
+        self.check_if_ui_exits()
+
+    def check_if_ui_exits(self):
+        reactor.callLater(.2, self.check_if_ui_exits)
+        if end_reactor_thread:
+            reactor.stop()
 
     def send_mouse_pos(self, pos):
-        self.transport.write(pickle.dumps((*pos, int(self.ping), ui.get_scale_factor())))
+        self.send((*pos, int(self.ping), ui.get_scale_factor()))
 
     def request_ping(self, dx):
-        self.ping_request_start = time.time()
-        self.transport.write(pickle.dumps(b'ping request'))
+        self.send(b'ping request')
+
+    def send(self, packet):
+        if self.transport is not None:  # transport is None if server is closed
+            self.transport.write(pickle.dumps(packet))
 
     def datagramReceived(self, datagram, address):
         global player_idx, opponent_idx
@@ -55,7 +65,8 @@ class UdpClient(DatagramProtocol):
                 rec_packets.put(packet)
 
     def connectionRefused(self):
-        print("No one listening")
+        print("No one listening")  # TODO
+        reactor.close()
 
 
 def get_newest_packet():
@@ -66,33 +77,40 @@ def get_newest_packet():
     return rec_packets.get()
 
 
+def close():
+    global end_reactor_thread
+    end_reactor_thread = True
+
+
 def consume_packet(dx):
-    packet = get_newest_packet()
-    packet = packet[1:]  # throw first, general header away
-    target_states = list(packet[:2, 2])
-    score_states = list(packet[2, 2:])
-    if player_idx == 1:  # In this case we are the second player
-        target_states.reverse()
-        score_states.reverse()
-    ui.set_values(
-        player_pos=packet[player_idx, :2],
-        opponent_pos=packet[opponent_idx, :2],
-        target_states=target_states,
-        score_states=score_states,
-        scores=list(packet[2, :2]),
-        pings=list(packet[:2, 3]),
-        ant_pos=packet[3:, :2],
-        ant_rad=packet[3:, 2],
-        ant_shares=packet[3:, 3])
+    if rec_packets.qsize() > 0:
+        packet = get_newest_packet()
+        packet = packet[1:]  # throw first, general header away
+        target_states = list(packet[:2, 2])
+        score_states = list(packet[2, 2:])
+        if player_idx == 1:  # In this case we are the second player
+            target_states.reverse()
+            score_states.reverse()
+        ui.set_values(
+            player_pos=packet[player_idx, :2],
+            opponent_pos=packet[opponent_idx, :2],
+            target_states=target_states,
+            score_states=score_states,
+            scores=list(packet[2, :2]),
+            pings=list(packet[:2, 3]),
+            ant_pos=packet[3:, :2],
+            ant_rad=packet[3:, 2],
+            ant_shares=packet[3:, 3])
 
 
 client = UdpClient()
 ui = UI(debug_overlay=True,
-        on_motion=client.send_mouse_pos)
+        on_motion=client.send_mouse_pos,
+        on_close=close)
 
 reactor.listenUDP(0, client)
 Thread(target=reactor.run,
-       kwargs={"installSignalHandlers": False},).start()
+       kwargs={"installSignalHandlers": False}).start()
 
 clock.schedule_interval(consume_packet, 2 ** -8)
 clock.schedule_interval(client.request_ping, .5)
