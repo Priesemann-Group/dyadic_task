@@ -1,12 +1,10 @@
 import numpy as np
 
 from configuration import conf as c
-from pyglet import image
-from pyglet.sprite import Sprite
 from pyglet.shapes import Circle
 from pyglet.graphics import Batch, OrderedGroup
 from ui.sounds import OccupationSoundPlayer
-from ui.elements import TargetIndicator, PopUpLabel
+from ui.elements import TargetIndicator, PopUpLabel, Ant
 from ui.window import ScaleFieldWindow
 
 
@@ -34,11 +32,8 @@ class UI:
         self._occupation_sound_player = []
         self._init_ui_elements()
 
-        self._ant_sprites = self._generate_ant_sprites()
-
-        # Logic
-        self._ant_shares_mirror = np.full(c.ant_amount, np.nan)
         self._player_idx = -2
+        self._ants = self._generate_ants()
 
         # Register event handlers
         self._win.event(self.on_draw)
@@ -85,45 +80,20 @@ class UI:
                                                        batch=self._batch))
             self._occupation_sound_player.append(OccupationSoundPlayer(c.player_volumes[i]))
 
-    def _generate_ant_sprites(self):
-        circles = []
+    def _generate_ants(self):
+        ants = []
         for _ in range(c.ant_amount):
-            img = image.load('../res/img/circ.png')
-            img.anchor_x = img.width // 2
-            img.anchor_y = img.height // 2
-            sprite = Sprite(img, 0, 0, batch=self._batch, group=self._ant_group)
-            sprite.update(0, 0, None, 1 / c.ant_img_size)
-            circles.append(sprite)
-        return circles
-
-    def _get_center_circle(self, ant_shares):
-        if np.isnan(ant_shares):
-            img = image.load('../res/img/circ.png')
-        else:
-            if self._player_idx == 0:
-                img = image.load(f'../res/img/circ_{int(100 * ant_shares)}.png')
-            else:
-                img = image.load(f'../res/img/circ_{int(100 * (1 - ant_shares))}.png')
-        img.anchor_x = img.width // 2
-        img.anchor_y = img.height // 2
-        return img
-
-    def _update_ant_sprites(self, i, ant_shares):
-        if not (np.isnan(ant_shares) and np.isnan(self._ant_shares_mirror[i])):  # they are at least not both None
-            if np.isnan(ant_shares) or np.isnan(self._ant_shares_mirror[i]):  # only one is None
-                self._ant_sprites[i].image = self._get_center_circle(ant_shares)
-                self._ant_shares_mirror[i] = ant_shares
-            else:  # No one is none
-                if int(ant_shares * 1000) != int(self._ant_shares_mirror[i] * 1000):
-                    self._ant_sprites[i].image = self._get_center_circle(ant_shares)
-                    self._ant_shares_mirror[i] = ant_shares
+            ants.append(Ant(player_idx=self._player_idx,
+                            share=np.nan,
+                            batch=self._batch,
+                            group=self._ant_group))
+        return ants
 
     def _set_ants(self, ant_pos, ant_rad, ant_shares):
         for i in range(len(ant_pos)):
-            self._ant_sprites[i].update(*tuple(ant_pos[i]), None, ant_rad[i] * 2. / c.ant_img_size)
-            self._update_ant_sprites(i, ant_shares[i])
+            self._ants[i].update_ant(ant_pos[i], ant_rad[i], ant_shares[i])
         for i in range(len(ant_pos), c.ant_amount):
-            self._ant_sprites[i].update(-1000, -1000, None, 0.)
+            self._ants[i].update_ant((-1000, -1000), 1)
 
     def _set_target_states(self, target_states, scored_states):  # Called after set_ants()
         for i in [0, 1]:
@@ -132,7 +102,7 @@ class UI:
                     self._occupation_sound_player[i].occupying()
                 idx = int(target_states[i])
                 progress = target_states[i] - idx
-                self._target_indicators[i].set_on_target(self._ant_sprites[idx], progress)
+                self._target_indicators[i].set_on_target(self._ants[idx], progress)
             else:
                 if self._target_indicators[i].x != -1000:  # target is away
                     if np.isnan(scored_states[i]):  # because we lost it
@@ -152,12 +122,6 @@ class UI:
             self._set_individual_score_states(score_states)
         self._update_popup_pos(score_states)
 
-    def _update_popup_pos(self, score_states):
-        for i in [0, 1]:
-            if self._score_popup_labels[i].x != -1000:
-                progress = score_states[i] - int(score_states[i])
-                self._score_popup_labels[i].update(progress)
-
     def _set_individual_score_states(self, score_states):
         for i in [0, 1]:
             if not np.isnan(score_states[i]):
@@ -166,3 +130,9 @@ class UI:
             else:  # remove old score popup labels
                 self._score_popup_labels[i].x = -1000
                 self._score_popup_labels[i].anchor_x = 'left'
+
+    def _update_popup_pos(self, score_states):
+        for i in [0, 1]:
+            if self._score_popup_labels[i].x != -1000:
+                progress = score_states[i] - int(score_states[i])
+                self._score_popup_labels[i].update(progress)
