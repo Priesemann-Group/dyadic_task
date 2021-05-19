@@ -7,11 +7,6 @@ from configuration import conf as c
 from backend import engine as e, data_depositor
 
 
-#import data_depositor
-
-# TODO handle client disconnects
-
-
 class Server(DatagramProtocol):
     def __init__(self):
         self.player_addrs = [('', 0), ('', 0)]
@@ -21,8 +16,21 @@ class Server(DatagramProtocol):
         self.player_scale_factor = [-1., -1.]
         self.past_update_count = 0
 
+        # TODO debug
+        self.last_update_call = -1
+        self.update_time_diff_moving_avg = 0.
+
+        data_depositor.new_file()
+        e.update(0)
+        self.game_state = self.get_game_state()
+
+        e.load()
+        reactor.listenUDP(c.server_port, self)
+        reactor.run()
+        data_depositor.close()
+
     def startProtocol(self):
-        reactor.callLater(1 / c.pos_updates_ps, update)
+        reactor.callLater(1 / c.pos_updates_ps, self.update)
 
     def datagramReceived(self, data, addr):
         packet = pickle.loads(data)
@@ -39,7 +47,8 @@ class Server(DatagramProtocol):
             self.deregister_player(self.player_addrs.index(addr))
         elif msg == b'connect':
             if not self.check_player_contact():  # if the first client connects the game loop starts again
-                reactor.callLater(1 / c.pos_updates_ps, update)
+                self.last_update_call = -1  # TODO
+                reactor.callLater(1 / c.pos_updates_ps, self.update)
             player_idx = self.register_new_player(addr)
             self.transport.write(pickle.dumps(player_idx), addr)
 
@@ -90,36 +99,47 @@ class Server(DatagramProtocol):
         self.new_round(reset=True)
         e.score[player_idx] = 0
 
+    def get_game_state(self):
+        target_state = e.get_target_state(self.player_pos)
+        general_header = np.array([*self.player_scale_factor, 0, 0])  # last value is unused
+        player_header = np.array([[*self.player_pos[0], target_state[0], self.player_ping[0]],
+                                  [*self.player_pos[1], target_state[1], self.player_ping[1]]])
+        score_header = np.array([*e.score, *e.score_state])
+        game_state = np.column_stack((e.pos, e.rad, e.shares))
+        game_state = np.vstack((general_header, player_header, score_header, game_state))
 
-e.load()
+        return game_state
+
+    def update(self, dt=0):
+        if self.last_update_call < 0.:
+            self.last_update_call = time.time()
+            print('hallo')
+        t = time.time()
+        time_diff = t-self.last_update_call
+        print(f'time_diff {time_diff}')
+        self.update_time_diff_moving_avg = .7 * self.update_time_diff_moving_avg + .3 * time_diff
+        print(self.update_time_diff_moving_avg)
+        self.last_update_call = t
+
+        self.game_state[0, 2] = time.time()  # set output timestamp in general_header
+        self.send_packet(self.game_state)
+
+        if self.check_player_contact():  # contact to at least one client
+
+            time_since_start = time.time() - t
+            wait_time = 1 / c.pos_updates_ps - time_since_start
+            print(self.update_time_diff_moving_avg)
+            if (self.update_time_diff_moving_avg - 1/c.pos_updates_ps) > 0.:
+                wait_time -= self.update_time_diff_moving_avg - 1/c.pos_updates_ps
+
+            reactor.callLater(wait_time, self.update)
+
+            self.past_update_count += 1
+            if self.past_update_count == c.update_amount:
+                self.new_round()
+            data_depositor.deposit(self.game_state)
+            e.update(dt)
+            self.game_state = self.get_game_state()
+
+
 server = Server()
-
-
-def get_game_state():
-    target_state = e.get_target_state(server.player_pos)
-    general_header = np.array([*server.player_scale_factor, 0, 0])  # last value is unused
-    player_header = np.array([[*server.player_pos[0], target_state[0], server.player_ping[0]],
-                             [*server.player_pos[1], target_state[1], server.player_ping[1]]])
-    score_header = np.array([*e.score, *e.score_state])
-    game_state = np.column_stack((e.pos, e.rad, e.shares))
-    game_state = np.vstack((general_header, player_header, score_header, game_state))
-    game_state[0, 2] = time.time()  # set creation time stamp in general_header
-
-    return game_state
-
-
-def update(dt=0):
-    if server.check_player_contact():  # contact to at least one client
-        reactor.callLater(1 / c.pos_updates_ps, update)
-        server.past_update_count += 1
-        if server.past_update_count == c.update_amount:
-            server.new_round()
-        e.update(dt)
-        game_state = get_game_state()
-        server.send_packet(game_state)
-        data_depositor.deposit(game_state)
-
-
-reactor.listenUDP(c.server_port, server)
-reactor.run()
-data_depositor.close()
