@@ -22,7 +22,6 @@ class GameScheduler(SchedulerBase):
                 event = self.enterabs(start_time + i / conf.pos_updates_ps, 1, self._tick)  # TODO new round stuff
                 self._scheduled_events.append(event)
             self.run()
-        #self.round()  # start next round
 
     def next_round(self):
         self._next_round = True
@@ -33,11 +32,9 @@ class GameScheduler(SchedulerBase):
     def wakeup(self):
         self._sleep = False
 
-    def _tick(self):  # TODO rewrite?
+    def _tick(self):
         if self._sleep:
-            data_depositor.close()  # delete invalid game record
             while self._sleep:
-                print('sleeping...')
                 time.sleep(1)
             self._reset()
         elif self._next_round:

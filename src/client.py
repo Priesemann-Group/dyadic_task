@@ -20,8 +20,8 @@ class UdpClient(DatagramProtocol):
         self._end_reactor_thread = False
         self._player_idx = -1
         self._opponent_idx = None
-
-        self._ui = UI(debug_overlay=True,
+        print(type(sys.argv))
+        self._ui = UI(debug_overlay='debug' in sys.argv,
                       on_motion=self._send_mouse_pos,
                       on_close=self._close_form_ui_thread)
 
@@ -37,19 +37,15 @@ class UdpClient(DatagramProtocol):
         """
         Called after protocol has started listening.
         """
-        if len(sys.argv) == 2 and sys.argv[1] == 'local':
+        if 'local' in sys.argv:
             self.transport.connect('127.0.0.1', c.server_port)
         else:
             self.transport.connect(c.server_ip, c.server_port)
-        #self.transport.write(pickle.dumps((0, 0, 0, 0)))
         self._send(b'connect')
         self._check_if_ui_exits()
 
     def datagramReceived(self, datagram, address):
-        #print(self._player_idx)
         if self._player_idx == -1:
-            #print(datagram)
-            #print(type(datagram))
             self._player_idx = int(pickle.loads(datagram))  # First datagram contains the index
             self._opponent_idx = (self._player_idx - 1) % 2
             self._ui.set_player_idx(self._player_idx)
@@ -104,10 +100,9 @@ class UdpClient(DatagramProtocol):
         if self._rec_packets.qsize() > 0:
             packet = self._get_newest_packet()
             packet = packet[1:]  # throw first, general header away
-            #print(packet)
             target_states = list(packet[:2, 2])
             score_states = list(packet[2, 2:])
-            if self._player_idx == 1:  # In this case we are the second player
+            if self._player_idx == 1:  # We are the second player
                 target_states.reverse()
                 score_states.reverse()
             self._ui.set_values(

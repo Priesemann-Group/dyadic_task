@@ -75,7 +75,6 @@ class Server(DatagramProtocol):
     def _tick(self):
         game_state = engine.produce_next_game_state(self._player_pos)
         game_state = self._add_server_info(game_state)
-        #print(game_state)
         self._send_packet(game_state)
         data_depositor.deposit(game_state)
 

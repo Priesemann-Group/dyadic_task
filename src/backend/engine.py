@@ -75,7 +75,6 @@ def produce_next_game_state(player_positions):
     target_state = get_target_state(player_positions)
     player_header = np.array([[*player_positions[0], target_state[0], 0],
                               [*player_positions[1], target_state[1], 0]])
-    print(*score)
     score_header = np.array([*score, *score_state])
     game_state = np.column_stack((pos, rad, shares))
     game_state = np.vstack((player_header, score_header, game_state))
@@ -194,7 +193,7 @@ def update():
     #for v in vel:
     #    v /= euclid_dist(v)
     #    v *= c.velocity
-    #pos += vel
+    pos += vel
     collisions()
     correct_to_boundaries()
     update_animations()
@@ -234,7 +233,6 @@ def occupied(player_idx):
 
 def get_target_state(mouse_positions):
     global target_idx, target_occupation_date, score
-    print(score)
     out = [-1, -1]
     occupations = {}
     for player_idx, mouse_pos in enumerate(mouse_positions):
@@ -269,14 +267,10 @@ def shares_to_scores(s):
 def consume_occupation_dict(occupations, out):
     if len(occupations) == 2 and occupations[0] == occupations[1]:  # Both players occupied the same target
         if not np.isnan(shares[target_idx[0]]):  # A shared target is occupied
-            #print(f'share: {shares[target_idx[0]]}')
-            #print(f'score: {score[0]}')
             global score_state
             score_state[0], score_state[1] = shares_to_scores(shares[target_idx[0]])
             for i in [0, 1]:
                 score[i] += int(score_state[i])
-            #score[0], score[1] += int(score_state[0]), int(score_state[1])
-            #score[0], score[1] += *shares_to_scores(shares[target_idx[0]])
             t = time.time()
             score_animation_end[0], score_animation_end[1] = t+c.occupied_animation_time, t+c.occupied_animation_time
             out[0], out[1] = -1 * target_idx[0], -1 * target_idx[1]
