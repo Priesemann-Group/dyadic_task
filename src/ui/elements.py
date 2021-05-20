@@ -64,7 +64,7 @@ class Ant(Sprite):
 
 class PopUpLabel(Label):
     def __init__(self, **kwargs):
-        super().__init__(font_name=conf.font_name, font_size=conf.font_size, x=-1000, y=0, **kwargs)
+        super().__init__(font_name=conf.font_name, font_size=conf.popup_font_size, x=-1000, y=0, **kwargs)
         self._anchor_pos = (0, 0)
 
     def popup(self, player_cycle, score):
@@ -75,4 +75,7 @@ class PopUpLabel(Label):
     def update(self, progress):
         x, y = self._anchor_pos
         self.position = x, y + conf.popup_height * (1 - progress)
+
+    def adapt_size(self, scale_factor):
+        self.font_size = conf.popup_font_size * scale_factor
 

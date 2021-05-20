@@ -52,6 +52,8 @@ class UI:
                        ant_shares=ant_shares)
         self._set_target_states(target_states, score_states)
         self._set_score_states(score_states, target_states)
+        for popup in self._score_popup_labels:
+            popup.adapt_size(self._win.get_scale_factor())
 
     def get_scale_factor(self):
         return self._win.get_scale_factor()
@@ -94,8 +96,7 @@ class UI:
     def _generate_ants(self):
         ants = []
         for _ in range(c.ant_amount):
-            ants.append(Ant(#player_idx=self._player_idx,
-                            share=np.nan,
+            ants.append(Ant(share=np.nan,
                             batch=self._batch,
                             group=self._ant_group))
         return ants

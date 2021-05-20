@@ -17,6 +17,7 @@ update_amount = pos_updates_ps * lap_time  # 20 seconds
 # Appearance
 font_name = 'Arial'
 font_size = 20
+popup_font_size = 48
 font_color = (0, 0, 0, 255)
 background_color = (255, 255, 255)
 margin_color = (0, 0, 0)
