@@ -48,8 +48,8 @@ class UdpClient(DatagramProtocol):
     def datagramReceived(self, datagram, address):
         #print(self._player_idx)
         if self._player_idx == -1:
-            print(datagram)
-            print(type(datagram))
+            #print(datagram)
+            #print(type(datagram))
             self._player_idx = int(pickle.loads(datagram))  # First datagram contains the index
             self._opponent_idx = (self._player_idx - 1) % 2
             self._ui.set_player_idx(self._player_idx)
@@ -104,6 +104,7 @@ class UdpClient(DatagramProtocol):
         if self._rec_packets.qsize() > 0:
             packet = self._get_newest_packet()
             packet = packet[1:]  # throw first, general header away
+            #print(packet)
             target_states = list(packet[:2, 2])
             score_states = list(packet[2, 2:])
             if self._player_idx == 1:  # In this case we are the second player
