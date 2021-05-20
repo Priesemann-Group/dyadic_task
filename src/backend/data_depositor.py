@@ -36,6 +36,9 @@ def deposit(game_state):
 
 
 def close():
-    file.close()
-    os.remove(path)  # Remove invalid game record
+    global file
+    if file is not None:
+        file.close()
+        file = None
+        os.remove(path)  # Remove invalid game record
 

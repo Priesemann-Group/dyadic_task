@@ -22,37 +22,41 @@ class TargetIndicator(Circle):
 
 
 class Ant(Sprite):
-    def __init__(self, player_idx, share, batch, group):
-        self._player_idx = player_idx
-        self.share = share
-        img = self._get_center_circle(self.share)
-        super().__init__(img=img, batch=batch, group=group)
+    def __init__(self, share, batch, group):
+        self._player_idx = -1
+        self._share = share
+        #self._set_share(share)
+        super().__init__(img=self._get_center_circle(), batch=batch, group=group)
+        #img = self._get_center_circle(self.share)
 
     def update_ant(self, pos, rad, share=None):
         self.update(*tuple(pos), None, rad * 2. / conf.ant_img_size)
         if share is not None and self._share_changed(share):
-            self._set_new_share(share)
+            self._set_share(share)
 
     def _share_changed(self, current_share):
-        if not (np.isnan(current_share) and np.isnan(self.share)):  # they are at least not both None
-            if np.isnan(current_share) or np.isnan(self.share):  # only one is None -> Change in share
+        if not (np.isnan(current_share) and np.isnan(self._share)):  # they are at least not both None
+            if np.isnan(current_share) or np.isnan(self._share):  # only one is None -> Change in share
                 return True
-            elif int(current_share * 100) != int(self.share * 100):  # No one is none -> Check if values changed
+            elif int(current_share * 100) != int(self._share * 100):  # No one is none -> Check if values changed
                 return True
         return False
 
-    def _set_new_share(self, new_share):
-        self.image = self._get_center_circle(new_share)
-        self.share = new_share
+    def _set_share(self, new_share):
+        self._share = new_share
+        self.image = self._get_center_circle()
 
-    def _get_center_circle(self, share):
-        if np.isnan(share):
+    def set_player_idx(self, player_idx):
+        self._player_idx = player_idx
+
+    def _get_center_circle(self):
+        if np.isnan(self._share):
             img = image.load('../res/img/circ.png')
         else:
             if self._player_idx == 0:
-                img = image.load(f'../res/img/circ_{int(100 * share)}.png')
+                img = image.load(f'../res/img/circ_{int(100 * self._share)}.png')
             else:
-                img = image.load(f'../res/img/circ_{int(100 * (1 - share))}.png')
+                img = image.load(f'../res/img/circ_{int(100 * (1 - self._share))}.png')
         img.anchor_x = img.width // 2
         img.anchor_y = img.height // 2
         return img

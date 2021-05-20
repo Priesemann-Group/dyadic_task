@@ -72,6 +72,8 @@ class UI:
     def set_player_idx(self, player_idx):
         self._player_idx = player_idx
         self._win.set_player_idx(player_idx)
+        for ant in self._ants:
+            ant.set_player_idx(player_idx)
 
     def _init_ui_elements(self):
         for i in [0, 1]:
@@ -92,7 +94,7 @@ class UI:
     def _generate_ants(self):
         ants = []
         for _ in range(c.ant_amount):
-            ants.append(Ant(player_idx=self._player_idx,
+            ants.append(Ant(#player_idx=self._player_idx,
                             share=np.nan,
                             batch=self._batch,
                             group=self._ant_group))
