@@ -4,7 +4,7 @@ ant_amount = 10
 min_radius = 42
 max_radius = 60
 velocity = 3
-time_to_occupy = .5  # TODO back to .5
+time_to_occupy = .5
 occupied_animation_time = .3  # should be < time_to_occupy
 
 competitive_reward = 1
@@ -17,14 +17,14 @@ update_amount = pos_updates_ps * lap_time  # 20 seconds
 # Appearance
 font_name = 'Arial'
 font_size = 20
-popup_font_size = 48
+popup_font_size = 32
 font_color = (0, 0, 0, 255)
 background_color = (255, 255, 255)
 margin_color = (0, 0, 0)
 player_radius = 5
 ant_color = (100, 100, 200)
-target_opacity = 64
-popup_height = 20
+target_opacity = 255
+popup_height = 64
 
 player_colors = [
     (100, 100, 100),  # clients player color

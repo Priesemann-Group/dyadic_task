@@ -193,7 +193,7 @@ def update():
     #for v in vel:
     #    v /= euclid_dist(v)
     #    v *= c.velocity
-    pos += vel
+    #pos += vel
     collisions()
     correct_to_boundaries()
     update_animations()

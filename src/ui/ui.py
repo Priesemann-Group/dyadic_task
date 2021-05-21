@@ -26,7 +26,7 @@ class UI:
                                      resizable=True, vsync=False)
 
         # Ui elements
-        self._player_groups = []
+        #self._player_groups = []
         self._player_circles = []
         self._target_indicators = []
         self._score_popup_labels = []
@@ -79,13 +79,14 @@ class UI:
 
     def _init_ui_elements(self):
         for i in [0, 1]:
-            player_group = OrderedGroup(4 + i)  # TODO check whether clients player is still in front
+            marker_group = OrderedGroup(5 - i)
+            player_group = OrderedGroup(7 - i)
             player_color = c.player_colors[i]
             self._player_circles.append(Circle(0, 0, c.player_radius,
                                                color=player_color,
                                                batch=self._batch,
                                                group=player_group))
-            self._target_indicators.append(TargetIndicator(color=player_color,
+            self._target_indicators.append(TargetIndicator(marker_group=marker_group,
                                                            batch=self._batch,
                                                            group=self._target_group))
             self._score_popup_labels.append(PopUpLabel(color=(*player_color, 255),
@@ -114,14 +115,15 @@ class UI:
                     self._occupation_sound_player[i].occupying()
                 idx = int(target_states[i])
                 progress = target_states[i] - idx
-                self._target_indicators[i].set_on_target(self._ants[idx], progress)
+                self._target_indicators[i].set_on_target(self._ants[idx], progress, player_idx=i)
             else:
                 if self._target_indicators[i].x != -1000:  # target is away
                     if np.isnan(scored_states[i]):  # because we lost it
                         self._occupation_sound_player[i].slipped_off()
                     else:  # because we occupied it
                         self._occupation_sound_player[i].scored()
-                self._target_indicators[i].position = (-1000, -1000)
+                #self._target_indicators[i].position = (-1000, -1000)
+                self._target_indicators[i].move((-1000, -1000))
 
     def _set_score_states(self, score_states, target_states):
         if not np.isnan(sum(score_states)) \
