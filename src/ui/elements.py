@@ -46,6 +46,9 @@ class Ant(Sprite):
         if share is not None and self._share_changed(share):
             self._set_share(share)
 
+    def hide(self):
+        self.x = -1000
+
     def _share_changed(self, current_share):
         if not (np.isnan(current_share) and np.isnan(self._share)):  # they are at least not both None
             if np.isnan(current_share) or np.isnan(self._share):  # only one is None -> Change in share
@@ -95,4 +98,7 @@ class PopUpLabel(Label):
     def adapt_size(self, scale_factor):
         self.font_size = conf.popup_font_size * scale_factor
         self._scale_factor = scale_factor
+
+    def hide(self):
+        self.x = -1000
 

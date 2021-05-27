@@ -7,6 +7,7 @@ velocity = 3
 time_to_occupy = .5
 occupied_animation_time = .3  # should be < time_to_occupy
 
+time_before_round = 2
 competitive_reward = 1
 cooperative_reward = 10
 
@@ -17,6 +18,7 @@ update_amount = pos_updates_ps * lap_time  # 20 seconds
 # Appearance
 font_name = 'Arial'
 font_size = 20
+countdown_font_size = 64
 popup_font_size = 32
 font_color = (0, 0, 0, 255)
 background_color = (255, 255, 255)

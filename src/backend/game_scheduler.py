@@ -5,9 +5,10 @@ from configuration import conf
 
 
 class GameScheduler(SchedulerBase):
-    def __init__(self, action):
+    def __init__(self, action, send_msg):
         super().__init__(time.time, time.sleep),
         self._action = action
+        self._send_msg = send_msg
         self._scheduled_events = []
         self._next_round = False
         self._sleep = True
@@ -17,7 +18,9 @@ class GameScheduler(SchedulerBase):
             data_depositor.new_file()
             engine.respawn_ants()
             engine.score = [0, 0]
-            start_time = 1 + time.time()
+            start_time = conf.time_before_round + time.time()
+            for _ in range(3):  # Send 3 times to be packet loss safe
+                self._send_msg(start_time)
             for i in range(conf.update_amount):
                 event = self.enterabs(start_time + i / conf.pos_updates_ps, 1, self._tick)  # TODO new round stuff
                 self._scheduled_events.append(event)

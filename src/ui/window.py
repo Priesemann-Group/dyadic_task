@@ -5,6 +5,11 @@ from pyglet import clock
 from configuration import conf
 import numpy
 
+label_kwargs = {'x': 0, 'y': 0,
+                'font_name': conf.font_name,
+                'font_size': conf.font_size,
+                'color': conf.font_color}
+
 
 class ScaleFieldWindow:
     def __init__(self, batch, bg_group, fg_group, debug_overlay=False, *args, **kwargs):
@@ -12,6 +17,14 @@ class ScaleFieldWindow:
         self._debug_overlay = debug_overlay
         if self._debug_overlay:
             self._debug_labels = self.DebugLabels(batch, fg_group)
+        self._countdown_label = Label(x=0, y=0,
+                                      font_name=conf.font_name,
+                                      font_size=conf.countdown_font_size,
+                                      color=conf.font_color,
+                                      group=fg_group,
+                                      batch=batch)
+        self._countdown_label.anchor_x = "center"
+        self._countdown_label.anchor_y = "center"
         self._scale_factor = None
         self._client_field_size = None
         self._origin = (0, 0)
@@ -49,6 +62,14 @@ class ScaleFieldWindow:
         self._window.clear()
         if self._debug_overlay:
             self._debug_labels.draw()
+        self._countdown_label.draw()
+
+    def set_countdown(self, num):
+        if num == 0:
+            self._countdown_label.color = (0, 0, 0, 0)
+        else:
+            self._countdown_label.color = conf.font_color
+            self._countdown_label.text = f'{num}'
 
     def on_resize(self, width, height):
         self._scale_factor = None
@@ -95,6 +116,8 @@ class ScaleFieldWindow:
 
         if self._debug_overlay:
             self._debug_labels.replace_labels(self._origin, self._client_field_size)
+        self._countdown_label.x = self._origin[0] + self._client_field_size[0] // 2
+        self._countdown_label.y = self._origin[1] + self._client_field_size[1] // 2
 
     class DebugLabels:
         def __init__(self, batch, fg_group):

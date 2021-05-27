@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 
 from configuration import conf as c
@@ -26,7 +28,6 @@ class UI:
                                      resizable=True, vsync=False)
 
         # Ui elements
-        #self._player_groups = []
         self._player_circles = []
         self._target_indicators = []
         self._score_popup_labels = []
@@ -54,6 +55,19 @@ class UI:
         self._set_score_states(score_states, target_states)
         for popup in self._score_popup_labels:
             popup.adapt_size(self._win.get_scale_factor())
+
+    def set_start_time(self, start_time):
+        time_until_start = (start_time - time.time())
+        if time_until_start < 0.:
+            self._win.set_countdown(0)
+        else:
+            self._hide_ants()
+            if time_until_start < c.time_before_round * 1 / 3:
+                self._win.set_countdown(1)
+            elif time_until_start < c.time_before_round * 2 / 3:
+                self._win.set_countdown(2)
+            else:
+                self._win.set_countdown(3)
 
     def get_scale_factor(self):
         return self._win.get_scale_factor()
@@ -108,6 +122,14 @@ class UI:
         for i in range(len(ant_pos), c.ant_amount):
             self._ants[i].update_ant((-1000, -1000), 1)
 
+    def _hide_ants(self):
+        for ant in self._ants:
+            ant.hide()
+        for label in self._score_popup_labels:
+            label.hide()
+        for circle in self._player_circles:
+            circle.x = -1000
+
     def _set_target_states(self, target_states, scored_states):  # Called after set_ants()
         for i in [0, 1]:
             if target_states[i] > -.5:  # we are on a target
@@ -122,7 +144,6 @@ class UI:
                         self._occupation_sound_player[i].slipped_off()
                     else:  # because we occupied it
                         self._occupation_sound_player[i].scored()
-                #self._target_indicators[i].position = (-1000, -1000)
                 self._target_indicators[i].move((-1000, -1000))
 
     def _set_score_states(self, score_states, target_states):
