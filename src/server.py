@@ -14,7 +14,8 @@ from threading import Thread
 
 class Server(DatagramProtocol):
     def __init__(self):
-        self._player_addrs = [('', 0), ('', 0)]
+        #self._player_addrs = [('', 0), ('', 0)]
+        self._player_addrs = [None, None]
         self._player_last_contact = [-1., -1.]
         self._player_pos = [(0, 0), (0, 0)]
         self._player_ping = [-1., -1.]
@@ -26,7 +27,8 @@ class Server(DatagramProtocol):
         Thread(target=self._run_reactor,
                kwargs={"installSignalHandlers": False}).start()
 
-        self._game_scheduler = GameScheduler(self._tick)
+        self._game_scheduler = GameScheduler(action=self._tick,
+                                             send_msg=self._msg_to_all)
         self._game_scheduler.start()  # blocking, sleeps until wakeup call
 
     def startProtocol(self):
@@ -50,6 +52,11 @@ class Server(DatagramProtocol):
             self.transport.write(pickle.dumps(player_idx), address)
             self._game_scheduler.next_round()
             self._game_scheduler.wakeup()
+
+    def _msg_to_all(self, msg):
+        for address in self._player_addrs:
+            if address is not None:
+                self.transport.write(pickle.dumps(msg), address)
 
     def _register_new_player(self, address):
         print(f'register new player is called, addr: {address}')
@@ -101,6 +108,7 @@ class Server(DatagramProtocol):
                 self.transport.write(packet, addr)
 
     def _deregister_player(self, player_idx):
+        self._player_addrs[player_idx] = None
         self._player_last_contact[player_idx] = -1.
         self._player_pos[player_idx] = (-1000, -1000)
         self._player_ping[player_idx] = -1

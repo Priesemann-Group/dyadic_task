@@ -1,6 +1,7 @@
 import pickle
 import sys
 import time
+import numpy
 
 from ui.ui import UI
 from configuration import conf as c
@@ -20,7 +21,7 @@ class UdpClient(DatagramProtocol):
         self._end_reactor_thread = False
         self._player_idx = -1
         self._opponent_idx = None
-        print(type(sys.argv))
+        self._next_round_start = -1.
         self._ui = UI(debug_overlay='debug' in sys.argv,
                       on_motion=self._send_mouse_pos,
                       on_close=self._close_form_ui_thread)
@@ -52,11 +53,24 @@ class UdpClient(DatagramProtocol):
             print(f'this client got player number: {self._player_idx}')
         else:
             packet = pickle.loads(datagram)
-            if str(packet) == str(b'ping request answer'):
-                self._ping = (time.time() - self._ping_request_start) * 1000  # in milliseconds
-                self._ping_request_start = -1.
-            else:
+            if isinstance(packet, numpy.ndarray):
                 self._rec_packets.put(packet)
+            elif isinstance(packet, bytes):
+                if str(packet) == str(b'ping request answer'):
+                    self._ping = (time.time() - self._ping_request_start) * 1000  # in milliseconds
+                    self._ping_request_start = -1.
+            elif isinstance(packet, float):
+                self._next_round_start = packet
+                pass  # TODO
+
+        #if str(packet) == str(b'ping request answer'):  # Warning
+            #    self._ping = (time.time() - self._ping_request_start) * 1000  # in milliseconds
+            #    self._ping_request_start = -1.
+            #elif packet == b'new round':  # TODO
+#
+#                pass
+#            else:
+#                self._rec_packets.put(packet)
 
     def connectionRefused(self):
         print("Connection Refused")
@@ -97,7 +111,13 @@ class UdpClient(DatagramProtocol):
         self._end_reactor_thread = True
 
     def _consume_packet(self, dx):
-        if self._rec_packets.qsize() > 0:
+        if self._next_round_start > 0:
+            self._ui.set_start_time(self._next_round_start)
+            if self._next_round_start - time.time() < 0.:
+                self._next_round_start = -1
+                self._ui.set_start_time(-1)
+        elif self._rec_packets.qsize() > 0:
+            #self._ui.set_start_time(self._next_round_start)
             packet = self._get_newest_packet()
             packet = packet[1:]  # throw first, general header away
             target_states = list(packet[:2, 2])
