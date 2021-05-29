@@ -33,6 +33,7 @@ class ScaleFieldWindow:
         self._black_margins = [Rectangle(0, 0, 1, 1, color=conf.margin_color, batch=batch, group=fg_group),
                                Rectangle(0, 0, 1, 1, color=conf.margin_color, batch=batch, group=fg_group)]
         self.event(self.on_resize)
+        self._window.set_fullscreen()  # TODO on button press
 
     def close(self):
         self._window.close()
@@ -129,8 +130,22 @@ class ScaleFieldWindow:
             self._black_margins[1].x = 0
             self._black_margins[1].y = self._origin[1] + game_height
         else:
-            print('NOT IMPLEMENTED')
-            pass  # TODO implement?
+            self._background.width = width
+            self._background.height = height
+
+            self._scale_factor = 1.
+
+            for margin in self._black_margins:
+                margin.width = 0
+                margin.height = 0
+
+            self._score_chart.resize(x=0,
+                                     y=0,
+                                     width=width * score_chart_share,
+                                     height=height)
+
+            self._origin[0] += self._score_chart.width
+            print('fullscreen')
 
         self._background.position = tuple(self._origin)
 

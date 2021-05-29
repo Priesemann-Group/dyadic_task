@@ -207,7 +207,9 @@ def check_for_target(i, mouse_pos):
     global target_idx, target_occupation_date, pos
     for k, p in enumerate(pos):
         dist = euclid_dist(p - mouse_pos)
-        if dist < rad[k]:
+        is_cooperative = not np.isnan(shares[k])
+        is_opponents = target_idx[(i-1) % 2] == k
+        if dist < rad[k] and (is_cooperative or not is_opponents):
             target_idx[i] = k
             target_occupation_date[i] = time.time() + c.time_to_occupy
 
