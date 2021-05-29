@@ -33,7 +33,7 @@ class ScaleFieldWindow:
         self._black_margins = [Rectangle(0, 0, 1, 1, color=conf.margin_color, batch=batch, group=fg_group),
                                Rectangle(0, 0, 1, 1, color=conf.margin_color, batch=batch, group=fg_group)]
         self.event(self.on_resize)
-        self._window.set_fullscreen()  # TODO on button press
+        self.event(self.on_key_release)
 
     def close(self):
         self._window.close()
@@ -45,6 +45,10 @@ class ScaleFieldWindow:
         if self._debug_overlay:
             self._debug_labels._player_number = player_idx
         self._score_chart._player_idx = player_idx
+
+    def on_key_release(self, symbol, modifiers):
+        if symbol == 102:  # 102 == symbol for 'f'
+            self._window.set_fullscreen(fullscreen=not self._window.fullscreen)
 
     def event(self, func):
         return self._window.event(func)
@@ -143,9 +147,7 @@ class ScaleFieldWindow:
                                      y=0,
                                      width=width * score_chart_share,
                                      height=height)
-
             self._origin[0] += self._score_chart.width
-            print('fullscreen')
 
         self._background.position = tuple(self._origin)
 
