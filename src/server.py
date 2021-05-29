@@ -14,10 +14,9 @@ from threading import Thread
 
 class Server(DatagramProtocol):
     def __init__(self):
-        #self._player_addrs = [('', 0), ('', 0)]
         self._player_addrs = [None, None]
         self._player_last_contact = [-1., -1.]
-        self._player_pos = [(0, 0), (0, 0)]
+        self._player_pos = [(-1000, 0), (-1000, 0)]
         self._player_ping = [-1., -1.]
         self._player_scale_factor = [-1., -1.]
 

@@ -193,7 +193,7 @@ def update():
     #for v in vel:
     #    v /= euclid_dist(v)
     #    v *= c.velocity
-    pos += vel
+    #pos += vel
     collisions()
     correct_to_boundaries()
     update_animations()
@@ -219,13 +219,12 @@ def occupied(player_idx):
         add_rand_ant()
 
         score[player_idx] += c.competitive_reward
-        score_state[player_idx] = c.competitive_reward
+        score_state[player_idx] = c.competitive_reward + .999
         score_animation_end[player_idx] = time.time() + c.occupied_animation_time
 
         target = target_idx[player_idx]
         target_idx[player_idx] = -1
         target_occupation_date[player_idx] = 0.
-        #return -1
         return target
     else:
         return target_idx[player_idx]
@@ -259,9 +258,9 @@ def shares_to_scores(s):
     reward_p1 = c.cooperative_reward * s
     reward_p2 = c.cooperative_reward * (1 - s)
     if reward_p1 - int(reward_p1) > 0.5:
-        return int(reward_p1 + 1), int(reward_p2)
+        return int(reward_p1) + 1.999, int(reward_p2) + .999
     else:
-        return int(reward_p1), int(reward_p2 + 1)
+        return int(reward_p1) + .999, int(reward_p2) + 1.999
 
 
 def consume_occupation_dict(occupations, out):

@@ -22,6 +22,8 @@ countdown_font_size = 64
 popup_font_size = 32
 font_color = (0, 0, 0, 255)
 background_color = (255, 255, 255)
+score_chart_bg_color = (32, 32, 32)
+score_chart_max_score = 30
 margin_color = (0, 0, 0)
 player_radius = 5
 ant_color = (100, 100, 200)
@@ -38,7 +40,9 @@ player_volumes = [1., .4]
 
 
 # Server configs
-field_size = (1920, 1080)
+#field_size = (1920, 1080)
+field_size = (1820, 1080)
+score_chart_width = 100  # field_size[0] + score_chart_width = 1920
 server_ip = '134.76.24.227'
 server_port = 8767
 

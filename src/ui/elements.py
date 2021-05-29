@@ -28,6 +28,10 @@ class TargetIndicator(Circle):
         self.position = position
         self._target_sprite.position = position
 
+    def hide(self):
+        self.x = -1000
+        self._target_sprite.x = -1000
+
     def _get_sprite(self, player_idx):
         img = image.load(f'../res/img/target_indicator_{player_idx}.png')
         img.anchor_x = img.width // 2
@@ -40,6 +44,7 @@ class Ant(Sprite):
         self._player_idx = -1
         self._share = share
         super().__init__(img=self._get_center_circle(), batch=batch, group=group)
+        self.hide()
 
     def update_ant(self, pos, rad, share=None):
         self.update(*tuple(pos), None, rad * 2. / conf.ant_img_size)

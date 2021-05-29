@@ -23,12 +23,13 @@ class ScaleFieldWindow:
                                       color=conf.font_color,
                                       group=fg_group,
                                       batch=batch)
-        self._countdown_label.anchor_x = "center"
-        self._countdown_label.anchor_y = "center"
+        self._countdown_label.anchor_x = 'center'
+        self._countdown_label.anchor_y = 'center'
         self._scale_factor = None
         self._client_field_size = None
-        self._origin = (0, 0)
+        self._origin = [0, 0]
         self._background = Rectangle(0, 0, 0, 0, color=conf.background_color, batch=batch, group=bg_group)
+        self._score_chart = self.ScoreChart(batch=batch, fg_group=fg_group, bg_group=bg_group)
         self._black_margins = [Rectangle(0, 0, 1, 1, color=conf.margin_color, batch=batch, group=fg_group),
                                Rectangle(0, 0, 1, 1, color=conf.margin_color, batch=batch, group=fg_group)]
         self.event(self.on_resize)
@@ -42,6 +43,7 @@ class ScaleFieldWindow:
     def set_player_idx(self, player_idx):
         if self._debug_overlay:
             self._debug_labels._player_number = player_idx
+        self._score_chart._player_idx = player_idx
 
     def event(self, func):
         return self._window.event(func)
@@ -53,10 +55,11 @@ class ScaleFieldWindow:
         else:
             return (x - self._origin) / self._scale_factor
 
-    def set_scores_and_pings(self, scores, pings):
+    def set_scores_and_pings(self, scores, pings, score_states):
         if self._debug_overlay:
             self._debug_labels._scores = scores
             self._debug_labels._player_pings = pings
+        self._score_chart.set_score(scores, score_states)
 
     def on_draw(self):
         self._window.clear()
@@ -72,52 +75,104 @@ class ScaleFieldWindow:
             self._countdown_label.text = f'{num}'
 
     def on_resize(self, width, height):
-        self._scale_factor = None
-        self._client_field_size = [width, height]
+        self._scale_factor = None  # TODO del?
         self._origin = [0, 0]
 
-        aspect_ratio_client = self._client_field_size[0] / self._client_field_size[1]
-        aspect_ratio_server = conf.field_size[0] / conf.field_size[1]
+        aspect_ratio_client = width / height
+        aspect_ratio_game = (conf.field_size[0] + conf.score_chart_width) / conf.field_size[1]
+        score_chart_share = conf.score_chart_width / (conf.field_size[0] + conf.score_chart_width)
 
-        if aspect_ratio_client > aspect_ratio_server:  # left, right margins
+        if aspect_ratio_client > aspect_ratio_game:  # left, right margins
             # height is the limiting factor => width is what we adapt
-            self._client_field_size[0] = height * aspect_ratio_server
-            self._origin[0] = (width - self._client_field_size[0]) // 2
-            self._scale_factor = self._client_field_size[0] / conf.field_size[0]
+            self._background.height = height
+            game_width = height * aspect_ratio_game
+            self._background.width = game_width * (1 - score_chart_share)
 
-            self._black_margins[0].width = self._origin[0]
-            self._black_margins[0].height = self._client_field_size[1]
-            self._black_margins[1].width = self._origin[0]
-            self._black_margins[1].height = self._client_field_size[1]
+            self._scale_factor = self._background.width / conf.field_size[0]  # TODO rename background?
 
-            self._black_margins[1].x = self._origin[0] + self._client_field_size[0]
+            self._black_margins[0].width = (width - game_width) // 2
+            self._black_margins[1].width = (width - game_width) // 2
+            self._black_margins[0].height = height
+            self._black_margins[1].height = height
+
+            self._score_chart.resize(x=self._black_margins[0].width,
+                                     y=0,
+                                     width=game_width * score_chart_share,
+                                     height=height)
+
+            self._origin[0] += self._black_margins[0].width
+            self._origin[0] += self._score_chart.width
+
+            self._black_margins[1].x = self._origin[0] + game_width
             self._black_margins[1].y = 0
-
-        elif aspect_ratio_client < aspect_ratio_server:  # lower, upper margins
+        elif aspect_ratio_client < aspect_ratio_game:  # lower, upper margins
             # width is the limiting factor => height is what we adapt
-            self._client_field_size[1] = width / aspect_ratio_server
-            self._origin[1] = (height - self._client_field_size[1]) // 2
-            self._scale_factor = self._client_field_size[1] / conf.field_size[1]
+            self._background.width = width * (1 - score_chart_share)
+            game_height = width / aspect_ratio_game
+            self._background.height = game_height
 
-            self._black_margins[0].width = self._client_field_size[0]
-            self._black_margins[0].height = self._origin[1]
-            self._black_margins[1].width = self._client_field_size[0]
-            self._black_margins[1].height = self._origin[1]
+            self._scale_factor = self._background.height / conf.field_size[1]
+
+            self._black_margins[0].height = (height - game_height) // 2
+            self._black_margins[1].height = (height - game_height) // 2
+            self._black_margins[0].width = width
+            self._black_margins[1].width = width
+
+            self._score_chart.resize(x=0,
+                                     y=self._black_margins[0].height,
+                                     width=width * score_chart_share,
+                                     height=game_height)
+
+            self._origin[0] += self._score_chart.width
+            self._origin[1] += self._black_margins[0].height
 
             self._black_margins[1].x = 0
-            self._black_margins[1].y = self._origin[1] + self._client_field_size[1]
-
+            self._black_margins[1].y = self._origin[1] + game_height
         else:
-            self._scale_factor = self._client_field_size[0] / conf.field_size[0]  # TODO check whether this case works
+            print('NOT IMPLEMENTED')
+            pass  # TODO implement?
 
-        self._background.width = self._client_field_size[0]
-        self._background.height = self._client_field_size[1]
-        self._background.x, self._background.y = self._origin[0], self._origin[1]
+        self._background.position = tuple(self._origin)
 
         if self._debug_overlay:
-            self._debug_labels.replace_labels(self._origin, self._client_field_size)
-        self._countdown_label.x = self._origin[0] + self._client_field_size[0] // 2
-        self._countdown_label.y = self._origin[1] + self._client_field_size[1] // 2
+            self._debug_labels.replace_labels(origin=self._origin,
+                                              field_height=self._background.height)
+        self._countdown_label.x = self._origin[0] + self._background.width // 2
+        self._countdown_label.y = self._origin[1] + self._background.height // 2
+
+    class ScoreChart(Rectangle):
+        def __init__(self, batch, fg_group, bg_group):
+            super().__init__(0, 0, 1, 1, color=conf.score_chart_bg_color, batch=batch, group=bg_group)
+            self._player_idx = 0
+            self._scores = [0, 0]
+            self._bars = [Rectangle(0, 0, 1, 1, color=conf.player_colors[0], batch=batch, group=fg_group),
+                          Rectangle(0, 0, 1, 1, color=conf.player_colors[1], batch=batch, group=fg_group)]
+
+        def resize(self, x, y, width, height):
+            self.width = width
+            self.height = height
+            self.x = x
+            self.y = y
+            for i in [0, 1]:
+                self._bars[i].x = x + i * width // 2
+                self._bars[i].y = y
+                self._bars[i].width = width // 2
+            self._update_bars()
+
+        def set_score(self, scores, score_states):
+            self._scores = scores
+            self._update_bars(score_states)
+
+        def _update_bars(self, score_states=None):
+            for i, bar in enumerate(self._bars):
+                score_idx = (i - self._player_idx) % 2
+                if score_states is None or numpy.isnan(score_states[i]):
+                    bar.height = self.height * self._scores[score_idx] / conf.score_chart_max_score
+                else:
+                    progress = score_states[i] - int(score_states[i])
+                    fraction_to_show = int(score_states[i]) * (1. - progress)
+                    score_to_show = self._scores[score_idx] - int(score_states[i]) + fraction_to_show
+                    bar.height = self.height * score_to_show / conf.score_chart_max_score
 
     class DebugLabels:
         def __init__(self, batch, fg_group):
@@ -139,12 +194,12 @@ class ScaleFieldWindow:
                                   Label(**label_kwargs)]
             self._player_number = -1
 
-        def replace_labels(self, origin, field_size):
+        def replace_labels(self, origin, field_height):
             self._fps_label.x = origin[0]
-            self._fps_label.y = origin[1] + field_size[1] - conf.font_size
+            self._fps_label.y = origin[1] + field_height - conf.font_size
             for i, label in enumerate(self._ping_labels):
                 label.x = origin[0]
-                label.y = origin[1] + field_size[1] - (2 + i) * conf.font_size
+                label.y = origin[1] + field_height - (2 + i) * conf.font_size
             self._player_number_label.x = origin[0]
             self._player_number_label.y = origin[1] + 2 * conf.font_size
             for label in self._score_labels:

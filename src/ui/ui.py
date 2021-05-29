@@ -45,7 +45,7 @@ class UI:
 
     def set_values(self, pings, player_pos, opponent_pos, target_states,
                    score_states, scores, ant_pos, ant_rad, ant_shares):
-        self._win.set_scores_and_pings(scores, pings)
+        self._win.set_scores_and_pings(scores, pings, score_states)
         self._player_circles[0].position = tuple(self._win.to_win_coordinates(player_pos))
         self._player_circles[1].position = tuple(self._win.to_win_coordinates(opponent_pos))
         self._set_ants(ant_pos=self._win.to_win_coordinates(ant_pos),
@@ -96,7 +96,7 @@ class UI:
             marker_group = OrderedGroup(5 - i)
             player_group = OrderedGroup(7 - i)
             player_color = c.player_colors[i]
-            self._player_circles.append(Circle(0, 0, c.player_radius,
+            self._player_circles.append(Circle(-1000, 0, c.player_radius,
                                                color=player_color,
                                                batch=self._batch,
                                                group=player_group))
@@ -129,6 +129,8 @@ class UI:
             label.hide()
         for circle in self._player_circles:
             circle.x = -1000
+        for indicator in self._target_indicators:
+            indicator.hide()
 
     def _set_target_states(self, target_states, scored_states):  # Called after set_ants()
         for i in [0, 1]:
