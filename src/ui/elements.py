@@ -4,6 +4,7 @@ from configuration import conf
 from pyglet import image
 from pyglet.sprite import Sprite
 import numpy as np
+from backend import ant_kind
 
 
 class TargetIndicator(Circle):
@@ -19,8 +20,9 @@ class TargetIndicator(Circle):
         self._target_sprite.image = self._get_sprite(player_idx)
         self._target_sprite.update(x=target_ant.x, y=target_ant.y, rotation=None, scale=target_ant.scale)
         self.radius = (target_ant.scale * conf.ant_img_size / 2.) * (1. - progress)
-        if np.isnan(target_ant.get_share()):
-            self.opacity = 200 * (1 - progress)
+        if target_ant.is_competitive():
+            self.opacity = 255 * (1 - progress)
+            #self.opacity = 150
         else:
             self.opacity = 100 * (1 - progress)
 
@@ -39,10 +41,32 @@ class TargetIndicator(Circle):
         return img
 
 
+class Pointer(Circle):
+    def __init__(self, player_color, player_group, player_pointer_group, *args, **kwargs):
+        super().__init__(-1000, 0, conf.player_radius,
+                         color=conf.border_black,
+                         group=player_group,
+                         *args, **kwargs)
+        self._inner = Circle(-1000, 0, conf.player_radius - 2,
+                             color=player_color,
+                             group=player_pointer_group,
+                             *args, **kwargs)
+
+    def place(self, pos, scale_factor):
+        self.position = pos
+        self._inner.position = pos
+        self.radius = conf.player_radius * scale_factor
+        self._inner.radius = (conf.player_radius - 2) * scale_factor
+
+    def hide(self):
+        self.x = -1000
+        self._inner.x = -1000
+
+
 class Ant(Sprite):
     def __init__(self, share, batch, group):
         self._player_idx = -1
-        self._share = share
+        self._share = share  # TODO rename?
         super().__init__(img=self._get_center_circle(), batch=batch, group=group)
         self.hide()
 
@@ -65,21 +89,26 @@ class Ant(Sprite):
     def get_share(self):
         return self._share
 
+    def is_competitive(self):
+        #return not ant_kind.is_shared(ant_kind.AntKind(self._share))
+        return not ant_kind.is_shared(self._share)
+
     def _set_share(self, new_share):
         self._share = new_share
         self.image = self._get_center_circle()
 
-    def set_player_idx(self, player_idx):
+    def set_player_idx(self, player_idx):  # TODO del
         self._player_idx = player_idx
 
     def _get_center_circle(self):
         if np.isnan(self._share):
-            img = image.load('../res/img/circ.png')
+            img = image.load('../res/img/circ_0.png')  # TODO this covers init process, refactor this!
         else:
-            if self._player_idx == 0:
-                img = image.load(f'../res/img/circ_{int(100 * self._share)}.png')
-            else:
-                img = image.load(f'../res/img/circ_{int(100 * (1 - self._share))}.png')
+            img = image.load(f'../res/img/circ_{int(self._share)}.png')
+            #if self._player_idx == 0:
+            #    img = image.load(f'../res/img/circ_{int(100 * self._share)}.png')
+            #else:
+            #    img = image.load(f'../res/img/circ_{int(100 * (1 - self._share))}.png')
         img.anchor_x = img.width // 2
         img.anchor_y = img.height // 2
         return img

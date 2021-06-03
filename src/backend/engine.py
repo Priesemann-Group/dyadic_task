@@ -1,290 +1,240 @@
-import random as r
+import random
 import time
 
 import numpy as np
 from numba import njit
 
-import configuration.conf as c
-
-pos = np.full((c.ant_amount, 2), np.nan, dtype='float64')
-vel = np.full((c.ant_amount, 2), np.nan, dtype='float64')
-rad = np.full(c.ant_amount, np.nan, dtype='float64')
-
-# nan => both players can occupy the point
-# 0   => player 0 owns the point
-# 1   => player 1 owns the point
-# everything between: shared between the players
-shares = np.full(c.ant_amount, np.nan, dtype='float64')
+import configuration.conf as conf
+import backend.ant_kind as ant_kind
 
 
-score = [0, 0]
-score_state = [np.nan, np.nan]
-score_animation_end = [0., 0.]
+class Engine:
+    def __init__(self):
+        self._pos = np.full((conf.ant_amount, 2), np.nan, dtype='float64')
+        self._vel = np.full((conf.ant_amount, 2), np.nan, dtype='float64')
+        self._kinds = []
+
+        # call njit compiler
+        _euclid_dist(np.zeros(2))
+        _collision_calc(self._pos)
+
+        self.spawn_ants()
+
+        self._score = [0, 0]
+        self._score_state = [np.nan, np.nan]
+        self._score_animation_end = [0., 0.]
+
+        self._target_idx = [-1, -1]
+        self._target_occupation_date = [0., 0.]
+
+        self._collided_last_iter = []
+
+    def produce_next_game_state(self, player_positions):
+        self._update()
+        target_state = self._get_target_state(player_positions)
+        player_header = np.array([[*player_positions[0], target_state[0], 0],  # zeros are player pings later on
+                                  [*player_positions[1], target_state[1], 0]])
+        score_header = np.array([*self._score, *self._score_state])
+        game_state = np.column_stack((self._pos, self._get_kinds(), np.zeros(conf.ant_amount)))
+        game_state = np.vstack((player_header, score_header, game_state))
+        return game_state
+
+    def spawn_ants(self):
+        self._score = [0, 0]
+        self._pos = np.full((conf.ant_amount, 2), np.nan, dtype='float64')
+        self._vel = np.full((conf.ant_amount, 2), np.nan, dtype='float64')
+        self._kinds = [0, 0, 3, 3, 6, 6]  # will be overridden
+        for i in range(conf.ant_amount):
+            self._place_ant(i)
+
+    def _get_target_state(self, mouse_positions):
+        out = [-1, -1]
+        occupations = {}
+        for player_idx, mouse_pos in enumerate(mouse_positions):
+            mouse_pos = np.array(mouse_pos)
+            if self._target_idx[player_idx] != -1:  # mouse was on a target
+                #dist = self._euclid_dist(self._pos[self._target_idx[player_idx]] - mouse_pos)
+                dist = _euclid_dist(self._pos[self._target_idx[player_idx]] - mouse_pos)
+                if dist < conf.ant_radius:  # mouse is still on the target
+                    t = time.time()
+                    if t > self._target_occupation_date[player_idx]:  # occupied the target
+                        occupations[player_idx] = self._target_idx[player_idx]
+                    else:  # not occupied jet
+                        time_left = self._target_occupation_date[player_idx] - t
+                        out[player_idx] = self._target_idx[player_idx] + time_left / conf.time_to_occupy
+                else:  # mouse was on a target but lost it
+                    self._target_idx[player_idx] = -1
+                    self._target_occupation_date[player_idx] = 0.
+            else:  # mouse was on no target, check if it is now
+                self._check_for_target(player_idx, mouse_pos)
+
+        return self._consume_occupation_dict(occupations, out)
+
+    def _consume_occupation_dict(self, occupations, out):
+        if len(occupations) == 2 and occupations[0] == occupations[1]:  # Both players occupied the same target
+            # if not np.isnan(shares[target_idx[0]]):  # A shared target is occupied
+            #if ant_kind[target_idx[0]] == shared_0 or ant_kind[target_idx[0]] == shared_1:  # A shared target is occupied
+            if ant_kind.is_shared(self._kinds[self._target_idx[0]]):
+                #score_gain = self._shares_to_scores(shares[target_idx[0]])
+                score_gain = list(ant_kind.get_score(self._kinds[self._target_idx[0]]))
+                t = time.time()
+                for i in [0, 1]:
+                    self._score_state[i] = score_gain[i] + .999
+                    self._score[i] += int(self._score_state[i])
+                    self._score_animation_end[i] = t + conf.occupied_animation_time
+                    out[i] = -1 * self._target_idx[i]
+                self._place_ant(self._target_idx[0])
+                for i in [0, 1]:
+                    self._target_idx[i] = -1
+                    self._target_occupation_date[i] = 0.
+
+
+                #self._score_state[0], self._score_state[1] = shares_to_scores(shares[target_idx[0]])
+                #for i in [0, 1]:
+                #    self._score[i] += int(self._score_state[i])
+                #t = time.time()
+                #self._score_animation_end[0], self._score_animation_end[1] = t + conf.occupied_animation_time, t + conf.occupied_animation_time
+                #out[0], out[1] = -1 * target_idx[0], -1 * target_idx[1]
+
+                #self._place_ant(self._target_idx[0])
+
+                #for player_idx in [0, 1]:
+                #    target_idx[player_idx] = -1
+                #    target_occupation_date[player_idx] = 0.
+            else:  # Edge case: Both players occupied a not shared target within the same time (< 1/60s)
+                self._score[0] += .5  # TODO
+                self._score[1] += .5
+        else:  # Consume occupations
+            for player_idx in occupations.keys():
+                out[player_idx] = float(self._occupied(player_idx))
+        return out
+
+    def _occupied(self, player_idx):
+        #global target_idx, target_occupation_date, score
+        # if np.isnan(shares[target_idx[player_idx]]):  # Not a shared target
+        #target_kind = ant_kind[target_idx[player_idx]]
+        #if target_kind == compet_0 or target_kind == compet_1:  # Not a shared target
+        if not ant_kind.is_shared(self._kinds[self._target_idx[player_idx]]):
+            # pos[target_idx[player_idx]] = np.array([np.nan, np.nan])
+            # add_rand_ant()
+
+#            print(player_idx)
+            reward = ant_kind.get_score(self._kinds[self._target_idx[player_idx]])
+            self._score[player_idx] += reward
+            self._score_state[player_idx] = reward + .999
+            #self._score[player_idx] += conf.competitive_reward
+            #self._score_state[player_idx] = conf.competitive_reward + .999
+            self._score_animation_end[player_idx] = time.time() + conf.occupied_animation_time
+
+            self._place_ant(self._target_idx[player_idx])  # TODO rename place_ant?
+
+            target = self._target_idx[player_idx]
+            self._target_idx[player_idx] = -1
+            self._target_occupation_date[player_idx] = 0.
+            return target
+        else:
+            return self._target_idx[player_idx]
+
+    def _check_for_target(self, i, mouse_pos):
+        for k, p in enumerate(self._pos):
+            #dist = self._euclid_dist(p - mouse_pos)
+            dist = _euclid_dist(p - mouse_pos)
+            # is_cooperative = not np.isnan(shares[k])
+            # is_cooperative = ant_kind[k] == shared_0 or ant_kind[k] == shared_1
+            is_shared = ant_kind.is_shared(self._kinds[k])
+            is_occupied_by_opponent = self._target_idx[(i - 1) % 2] == k
+            if dist < conf.ant_radius and (is_shared or not is_occupied_by_opponent):
+                self._target_idx[i] = k
+                self._target_occupation_date[i] = time.time() + conf.time_to_occupy
+
+    def _get_kinds(self):
+        return np.array(self._kinds, dtype='float64')
+
+    def _update(self):
+        self._pos += self._vel
+        self._collisions()
+        self._correct_to_boundaries()
+        self._update_animations()
+
+    def _collisions(self):
+        colls = _collision_calc(self._pos)
+        for i, k in colls:
+            if i == -1:
+                break
+            if tuple(sorted((i, k))) in self._collided_last_iter:
+                if self._collision_next_iter(i, k):
+                    continue
+                else:
+                    self._collided_last_iter.remove(tuple(sorted((i, k))))
+            joint_vel = self._vel[i] + self._vel[k]
+            self._vel[i] = joint_vel - self._vel[i]
+            self._vel[k] = joint_vel - self._vel[k]
+            if self._collision_next_iter(i, k):
+                self._collided_last_iter.append(tuple(sorted((i, k))))
+
+    def _correct_to_boundaries(self):
+        for i in range(conf.ant_amount):
+            if not np.isnan(self._pos[i][0]):
+                for axis in [0, 1]:
+                    if self._pos[i][axis] < 0 + conf.ant_radius:
+                        self._pos[i][axis] = 1 + conf.ant_radius
+                        self._vel[i][axis] *= -1
+                    elif self._pos[i][axis] > conf.field_size[axis] - conf.ant_radius:
+                        self._pos[i][axis] = conf.field_size[axis] - 1 - conf.ant_radius
+                        self._vel[i][axis] *= -1
+
+    def _update_animations(self):
+        t = time.time()
+        for i in [0, 1]:
+            if not np.isnan(self._score_state[i]):
+                time_left = self._score_animation_end[i] - t
+                if time_left < 0:  # Animation is expired
+                    self._score_state[i] = np.nan
+                else:
+                    self._score_state[i] = time_left / conf.occupied_animation_time + int(self._score_state[i])
+
+    def _collision_next_iter(self, i, k):
+        diff = (self._pos[i] - self._vel[i]) - (self._pos[k] - self._vel[k])
+        return _euclid_dist(diff) < 2 * conf.ant_radius
+
+    def _place_ant(self, ant_idx):
+        angle = random.uniform(0., np.pi * 2)
+        self._pos[ant_idx] = self._get_free_ant_pos()
+        self._vel[ant_idx] = np.array([np.cos(angle), np.sin(angle)]) * conf.velocity
+        self._kinds[ant_idx] = ant_kind.ant_from_same_category(self._kinds[ant_idx])
+
+    def _get_free_ant_pos(self):
+        pos = np.random.rand(2) * conf.field_size
+        is_valid = True  # TODO rename
+        while is_valid:  # randomize until no collision to other points.
+            is_valid = False
+            for i in range(conf.ant_amount):
+                if not np.isnan(self._pos[i][0]):
+                    dist = _euclid_dist(self._pos[i] - pos)
+                    if dist < 2 * conf.ant_radius:  # collision with an existing ant
+                        pos = np.random.rand(2) * conf.field_size
+                        is_valid = True
+                        break
+        return pos.astype('float64')
 
 
 @njit
-def euclid_dist(vec):
+def _euclid_dist(vec):
     return (vec[0] ** 2 + vec[1] ** 2) ** .5
 
 
 @njit
-def gaussian(x, mu=0., sig=c.max_radius*1.5):
-    return 1. / (np.sqrt(2. * np.pi) * sig) * np.exp(-np.power((x - mu) / sig, 2.) / 2)
-
-
-@njit
-def accelerations_calc(ant_positions):
-    accelerations = np.zeros_like(ant_positions)
-    if not np.isnan(np.sum(ant_positions)):
-        for i, current_ant in enumerate(ant_positions):
-            for other_ant in ant_positions:
-                vec = current_ant - other_ant
-                dist = euclid_dist(vec)
-                acc = vec * gaussian(dist) / dist / gaussian(0.)
-                if not np.isnan(np.sum(acc)):
-                    accelerations[i] += acc
-    return accelerations
-
-
-@njit
-def collision_calc(ants, radians):  # unused
+def _collision_calc(pos):
     coll_count = 0
-    colls = np.array([[-1, -1]] * len(ants))
-    already_calculated = [False] * len(ants)  # TODO resize?
+    collisions = np.array([[-1, -1]] * conf.ant_amount)
+    already_calculated = [False] * conf.ant_amount  # TODO resize?
 
-    for i in range(len(ants)):
-        for k in range(i + 1, len(ants)):
+    for i in range(conf.ant_amount):
+        for k in range(i + 1, conf.ant_amount):
             if not already_calculated[k]:
-                dist = euclid_dist(ants[k] - ants[i])
-                if dist < radians[i] + radians[k]:
+                dist = _euclid_dist(pos[k] - pos[i])
+                if dist < 2 * conf.ant_radius:
                     already_calculated[k] = True
-                    colls[coll_count] = np.array([i, k])
+                    collisions[coll_count] = np.array([i, k])
                     coll_count += 1
-    return list(colls)
-
-
-def load():
-    collision_calc(pos, rad)
-    #accelerations_calc(pos)
-    euclid_dist(np.array([0, 0]))
-    gaussian(0.)
-
-
-def produce_next_game_state(player_positions):
-    update()
-    target_state = get_target_state(player_positions)
-    player_header = np.array([[*player_positions[0], target_state[0], 0],
-                              [*player_positions[1], target_state[1], 0]])
-    score_header = np.array([*score, *score_state])
-    game_state = np.column_stack((pos, rad, shares))
-    game_state = np.vstack((player_header, score_header, game_state))
-    return game_state
-
-
-def respawn_ants():
-    global pos, vel, rad, shares
-    pos = np.full((c.ant_amount, 2), np.nan, dtype='float64')
-    vel = np.full((c.ant_amount, 2), np.nan, dtype='float64')
-    rad = np.full(c.ant_amount, np.nan, dtype='float64')
-    shares = np.full(c.ant_amount, np.nan, dtype='float64')
-    for _ in range(c.ant_amount):  # TODO more sophisticated population control
-        add_rand_ant()
-    shares[0] = r.random()
-    shares[1] = r.random()
-    shares[2] = r.random()
-
-
-def add_ant(x, y, angle, radius, share=None):
-    global pos, vel, rad
-    i = np.where(np.isnan(pos[:, 0]))[0][0]  # Assumption: There is always at least one nan!
-    pos[i] = np.array([x, y], dtype='float64')
-    vel[i] = np.array([np.cos(angle), np.sin(angle)]) * c.velocity
-    rad[i] = radius
-    if share:
-        shares[i] = share
-    else:
-        shares[i] = np.nan
-
-
-def add_rand_ant(share=None):
-    x, y = r.randrange(c.field_size[0]), r.randrange(c.field_size[1])
-    radius = r.uniform(c.min_radius, c.max_radius)
-    proposed_pos = np.array([x, y])
-    is_valid = True
-    while is_valid:  # randomize until no collision to other points.
-        is_valid = False
-        for i in range(len(pos)):
-            if not np.isnan(pos[i][0]):
-                dist = euclid_dist(pos[i] - proposed_pos)
-                if dist < rad[i] + radius:
-                    x, y = r.randrange(c.field_size[0]), r.randrange(c.field_size[1])
-                    radius = r.uniform(c.min_radius, c.max_radius)
-                    proposed_pos = np.array([x, y])
-                    is_valid = True
-                    break
-    angle = r.uniform(0., np.pi * 2)
-    add_ant(x, y, angle, radius, share)
-
-
-def rad_to_area(i):
-    return np.pi * rad[i] ** 2
-
-
-def collision_next_iter(i, k):
-    global pos, vel
-    return euclid_dist((pos[i] - vel[i]) - (pos[k] - vel[k])) < rad[i] + rad[k]
-
-
-collided_last_iter = []
-
-
-def collisions():
-    global pos, vel
-    colls = collision_calc(pos, rad)
-    for i, k in colls:
-        if i == -1:
-            break
-        if tuple(sorted((i, k))) in collided_last_iter:
-            if collision_next_iter(i, k):
-                continue
-            else:
-                collided_last_iter.remove(tuple(sorted((i, k))))
-        area_i = rad_to_area(i)
-        area_k = rad_to_area(k)
-        joint_vel = (vel[i] * area_i + vel[k] * area_k) / (area_i + area_k)
-        vel[i] = 2 * joint_vel - vel[i]
-        vel[k] = 2 * joint_vel - vel[k]
-        if collision_next_iter(i, k):
-            collided_last_iter.append(tuple(sorted((i, k))))
-
-
-def correct_to_boundaries():
-    for i in range(len(pos)):
-        if not np.isnan(pos[i][0]):
-            if pos[i][0] < 0 + rad[i]:
-                pos[i][0] = 1 + rad[i]
-                vel[i][0] *= -1
-            elif pos[i][0] > c.field_size[0] - rad[i]:
-                pos[i][0] = c.field_size[0] - 1 - rad[i]
-                vel[i][0] *= -1
-            if pos[i][1] < 0 + rad[i]:
-                pos[i][1] = 1 + rad[i]
-                vel[i][1] *= -1
-            elif pos[i][1] > c.field_size[1] - rad[i]:
-                pos[i][1] = c.field_size[1] - 1 - rad[i]
-                vel[i][1] *= -1
-
-
-def update_animations():
-    t = time.time()
-    for i in [0, 1]:
-        if not np.isnan(score_state[i]):
-            time_left = score_animation_end[i] - t
-            if time_left < 0:  # Animation is expired
-                score_state[i] = np.nan
-            else:
-                score_state[i] = time_left / c.occupied_animation_time + int(score_state[i])
-
-
-def update():
-    global pos, vel
-    #acc = accelerations_calc(pos)
-    #vel += acc
-    #for v in vel:
-    #    v /= euclid_dist(v)
-    #    v *= c.velocity
-    pos += vel
-    collisions()
-    correct_to_boundaries()
-    update_animations()
-
-
-target_idx = [-1, -1]
-target_occupation_date = [0., 0.]
-
-
-def check_for_target(i, mouse_pos):
-    global target_idx, target_occupation_date, pos
-    for k, p in enumerate(pos):
-        dist = euclid_dist(p - mouse_pos)
-        is_cooperative = not np.isnan(shares[k])
-        is_opponents = target_idx[(i-1) % 2] == k
-        if dist < rad[k] and (is_cooperative or not is_opponents):
-            target_idx[i] = k
-            target_occupation_date[i] = time.time() + c.time_to_occupy
-
-
-def occupied(player_idx):
-    global target_idx, target_occupation_date, score
-    if np.isnan(shares[target_idx[player_idx]]):  # Not a shared target
-        pos[target_idx[player_idx]] = np.array([np.nan, np.nan])
-        add_rand_ant()
-
-        score[player_idx] += c.competitive_reward
-        score_state[player_idx] = c.competitive_reward + .999
-        score_animation_end[player_idx] = time.time() + c.occupied_animation_time
-
-        target = target_idx[player_idx]
-        target_idx[player_idx] = -1
-        target_occupation_date[player_idx] = 0.
-        return target
-    else:
-        return target_idx[player_idx]
-
-
-def get_target_state(mouse_positions):
-    global target_idx, target_occupation_date, score
-    out = [-1, -1]
-    occupations = {}
-    for player_idx, mouse_pos in enumerate(mouse_positions):
-        mouse_pos = np.array(mouse_pos)
-        if target_idx[player_idx] != -1:  # mouse was on a target
-            dist = euclid_dist(pos[target_idx[player_idx]] - mouse_pos)
-            if dist < rad[target_idx[player_idx]]:  # mouse is still on the target
-                t = time.time()
-                if t > target_occupation_date[player_idx]:  # occupied the target
-                    occupations[player_idx] = target_idx[player_idx]
-                else:  # not occupied jet
-                    time_left = target_occupation_date[player_idx] - t
-                    out[player_idx] = target_idx[player_idx] + time_left / c.time_to_occupy
-            else:  # mouse was on a target but lost it
-                target_idx[player_idx] = -1
-                target_occupation_date[player_idx] = 0.
-        else:  # mouse was on no target, check if it is now
-            check_for_target(player_idx, mouse_pos)
-
-    return consume_occupation_dict(occupations, out)
-
-
-def shares_to_scores(s):
-    reward_p1 = c.cooperative_reward * s
-    reward_p2 = c.cooperative_reward * (1 - s)
-    if reward_p1 - int(reward_p1) > 0.5:
-        return int(reward_p1) + 1.999, int(reward_p2) + .999
-    else:
-        return int(reward_p1) + .999, int(reward_p2) + 1.999
-
-
-def consume_occupation_dict(occupations, out):
-    if len(occupations) == 2 and occupations[0] == occupations[1]:  # Both players occupied the same target
-        if not np.isnan(shares[target_idx[0]]):  # A shared target is occupied
-            global score_state
-            score_state[0], score_state[1] = shares_to_scores(shares[target_idx[0]])
-            for i in [0, 1]:
-                score[i] += int(score_state[i])
-            t = time.time()
-            score_animation_end[0], score_animation_end[1] = t+c.occupied_animation_time, t+c.occupied_animation_time
-            out[0], out[1] = -1 * target_idx[0], -1 * target_idx[1]
-            # delete shared ant and create a new one
-            pos[target_idx[0]] = np.array([np.nan, np.nan])
-            add_rand_ant(r.random())
-            for player_idx in [0, 1]:
-                target_idx[player_idx] = -1
-                target_occupation_date[player_idx] = 0.
-        else:  # Edge case: Both players occupied a not shared target within the same time (< 1/60s)
-            score[0] += .5  # TODO
-            score[1] += .5
-    else:  # Consume occupations
-        for player_idx in occupations.keys():
-            out[player_idx] = float(occupied(player_idx))
-    return out
+    return list(collisions)

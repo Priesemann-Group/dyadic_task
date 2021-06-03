@@ -6,7 +6,7 @@ from configuration import conf as c
 from pyglet.shapes import Circle
 from pyglet.graphics import Batch, OrderedGroup
 from ui.sounds import OccupationSoundPlayer
-from ui.elements import TargetIndicator, PopUpLabel, Ant
+from ui.elements import TargetIndicator, Pointer, PopUpLabel, Ant
 from ui.window import ScaleFieldWindow
 
 
@@ -34,7 +34,7 @@ class UI:
         self._occupation_sound_player = []
         self._init_ui_elements()
 
-        self._player_idx = -2
+        self._player_idx = -2  # TODO del
         self._ants = self._generate_ants()
 
         # Register event handlers
@@ -46,8 +46,10 @@ class UI:
     def set_values(self, pings, player_pos, opponent_pos, target_states,
                    score_states, scores, ant_pos, ant_rad, ant_shares):
         self._win.set_scores_and_pings(scores, pings, score_states)
-        self._player_circles[0].position = tuple(self._win.to_win_coordinates(player_pos))
-        self._player_circles[1].position = tuple(self._win.to_win_coordinates(opponent_pos))
+        #self._player_circles[0].position = tuple(self._win.to_win_coordinates(player_pos))
+        #self._player_circles[1].position = tuple(self._win.to_win_coordinates(opponent_pos))
+        self._player_circles[0].place(tuple(self._win.to_win_coordinates(player_pos)), self._win.get_scale_factor())
+        self._player_circles[1].place(tuple(self._win.to_win_coordinates(opponent_pos)), self._win.get_scale_factor())
         self._set_ants(ant_pos=self._win.to_win_coordinates(ant_pos),
                        ant_rad=ant_rad * self._win.get_scale_factor(),
                        ant_shares=ant_shares)
@@ -88,18 +90,23 @@ class UI:
     def set_player_idx(self, player_idx):
         self._player_idx = player_idx
         self._win.set_player_idx(player_idx)
-        for ant in self._ants:
-            ant.set_player_idx(player_idx)
+        #for ant in self._ants:
+        #    ant.set_player_idx(player_idx)
 
     def _init_ui_elements(self):
         for i in [0, 1]:
             marker_group = OrderedGroup(5 - i)
             player_group = OrderedGroup(7 - i)
+            player_pointer_group = OrderedGroup(9 - i)
             player_color = c.player_colors[i]
-            self._player_circles.append(Circle(-1000, 0, c.player_radius,
-                                               color=player_color,
-                                               batch=self._batch,
-                                               group=player_group))
+            #self._player_circles.append(Circle(-1000, 0, c.player_radius,
+            #                                   color=player_color,
+            #                                   batch=self._batch,
+            #                                   group=player_group))
+            self._player_circles.append(Pointer(player_color=player_color,
+                                                player_group=player_group,
+                                                player_pointer_group=player_pointer_group,
+                                                batch=self._batch))
             self._target_indicators.append(TargetIndicator(marker_group=marker_group,
                                                            batch=self._batch,
                                                            group=self._target_group))
@@ -127,8 +134,8 @@ class UI:
             ant.hide()
         for label in self._score_popup_labels:
             label.hide()
-        for circle in self._player_circles:
-            circle.x = -1000
+        for pointer in self._player_circles:
+            pointer.hide()
         for indicator in self._target_indicators:
             indicator.hide()
 
@@ -153,7 +160,8 @@ class UI:
                 and int(target_states[0]) == int(target_states[1]) \
                 and self._score_popup_labels[0].x == -1000:
             for i in [0, 1]:
-                self._score_popup_labels[i].popup(self._player_circles[0], int(score_states[i]))
+                #self._score_popup_labels[i].popup(self._player_circles[0], int(score_states[i]))
+                self._score_popup_labels[i].popup(self._player_circles[self._player_idx], int(score_states[i]))
             self._score_popup_labels[0].anchor_x = 'right'
         else:
             self._set_individual_score_states(score_states)

@@ -1,7 +1,9 @@
 
 # Game config
-ant_amount = 10
-min_radius = 42
+#ant_amount = 10
+ant_amount = 6
+ant_radius = 50
+min_radius = 42  # TODO delete
 max_radius = 60
 velocity = 3
 time_to_occupy = .5
@@ -22,18 +24,22 @@ countdown_font_size = 64
 popup_font_size = 42
 font_color = (0, 0, 0, 255)
 background_color = (255, 255, 255)
-score_chart_bg_color = (32, 32, 32)
-score_chart_max_score = 30
+#score_chart_max_score = 30
+score_chart_max_score = 1./time_to_occupy * lap_time * 8 * 1/2  # 8 is the average reward for cooperation
 margin_color = (0, 0, 0)
-player_radius = 5
-ant_color = (100, 100, 200)
+player_radius = 10
+ant_base_color = (214, 245, 191)
+ant_color = (100, 100, 255)  # TODO delete
 target_opacity = 255
 popup_height = 64
+score_chart_bg_color = (32, 32, 32)
+border_black = (32, 32, 32)
 
 player_colors = [
-    (100, 100, 100),  # clients player color
-    (200, 100, 100)   # opponents color
+    (87, 117, 180),  # clients player color
+    (250, 114, 44)   # opponents color
 ]
+competitive_reward_color = (144, 190, 109)
 
 # Sound
 player_volumes = [1., .4]

@@ -44,7 +44,7 @@ class ScaleFieldWindow:
     def set_player_idx(self, player_idx):
         if self._debug_overlay:
             self._debug_labels._player_number = player_idx
-        self._score_chart._player_idx = player_idx
+        #self._score_chart._player_idx = player_idx  # TODO delete player_idx mechanic in score chart
 
     def on_key_release(self, symbol, modifiers):
         if symbol == 102:  # 102 == symbol for 'f'
@@ -160,7 +160,7 @@ class ScaleFieldWindow:
     class ScoreChart(Rectangle):
         def __init__(self, batch, fg_group, bg_group):
             super().__init__(0, 0, 1, 1, color=conf.score_chart_bg_color, batch=batch, group=bg_group)
-            self._player_idx = 0
+            self._player_idx = 0  # TODO del
             self._scores = [0, 0]
             self._bars = [Rectangle(0, 0, 1, 1, color=conf.player_colors[0], batch=batch, group=fg_group),
                           Rectangle(0, 0, 1, 1, color=conf.player_colors[1], batch=batch, group=fg_group)]
@@ -225,7 +225,7 @@ class ScaleFieldWindow:
             self._score_labels[0].y += conf.font_size
 
         def draw(self):
-            self._fps_label.text = f'FPS: {clock.get_fps()}'
+            self._fps_label.text = f'FPS: {int(clock.get_fps())}'
             self._player_number_label.text = f'You are Player {self._player_number + 1}'
             for i in range(len(self._ping_labels)):
                 self._ping_labels[i].text = f'Ping Player {i + 1}: {self._player_pings[i]}'

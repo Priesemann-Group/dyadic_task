@@ -2,6 +2,7 @@ import pickle
 import sys
 import time
 import numpy
+import numpy as np
 
 from ui.ui import UI
 from configuration import conf as c
@@ -63,15 +64,6 @@ class UdpClient(DatagramProtocol):
                 self._next_round_start = packet
                 pass  # TODO
 
-        #if str(packet) == str(b'ping request answer'):  # Warning
-            #    self._ping = (time.time() - self._ping_request_start) * 1000  # in milliseconds
-            #    self._ping_request_start = -1.
-            #elif packet == b'new round':  # TODO
-#
-#                pass
-#            else:
-#                self._rec_packets.put(packet)
-
     def connectionRefused(self):
         print("Connection Refused")
         self._close()
@@ -122,19 +114,22 @@ class UdpClient(DatagramProtocol):
             packet = packet[1:]  # throw first, general header away
             target_states = list(packet[:2, 2])
             score_states = list(packet[2, 2:])
-            if self._player_idx == 1:  # We are the second player
-                target_states.reverse()
-                score_states.reverse()
+            #if self._player_idx == 1:  # We are the second player
+            #    target_states.reverse()
+            #    score_states.reverse()
             self._ui.set_values(
-                player_pos=packet[self._player_idx, :2],
-                opponent_pos=packet[self._opponent_idx, :2],
+                player_pos=packet[0, :2],  # TODO to player 0 and 1
+                opponent_pos=packet[1, :2],
                 target_states=target_states,
                 score_states=score_states,
                 scores=list(packet[2, :2]),
                 pings=list(packet[:2, 3]),
                 ant_pos=packet[3:, :2],
-                ant_rad=packet[3:, 2],
-                ant_shares=packet[3:, 3])
+                ant_rad=np.array([c.ant_radius] * c.ant_amount),  # TODO del
+                ant_shares=packet[3:, 2],  # TODO rename
+            )
+                #ant_rad=packet[3:, 2],
+                #ant_shares=packet[3:, 3])
 
 
 client = UdpClient()
