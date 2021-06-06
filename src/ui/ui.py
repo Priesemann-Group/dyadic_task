@@ -160,7 +160,6 @@ class UI:
                 and int(target_states[0]) == int(target_states[1]) \
                 and self._score_popup_labels[0].x == -1000:
             for i in [0, 1]:
-                #self._score_popup_labels[i].popup(self._player_circles[0], int(score_states[i]))
                 self._score_popup_labels[i].popup(self._player_circles[self._player_idx], int(score_states[i]))
             self._score_popup_labels[0].anchor_x = 'right'
         else:

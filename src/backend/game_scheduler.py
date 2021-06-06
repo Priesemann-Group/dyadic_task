@@ -17,9 +17,7 @@ class GameScheduler(SchedulerBase):
     def start(self):
         while True:
             data_depositor.new_file()
-            #engine.respawn_ants()
             self._engine.spawn_ants()
-            #self._engine.score = [0, 0]
             start_time = conf.time_before_round + time.time()
             for _ in range(3):  # Send 3 times to be packet loss safe
                 self._send_msg(start_time)

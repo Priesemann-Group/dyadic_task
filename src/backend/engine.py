@@ -53,7 +53,6 @@ class Engine:
         for player_idx, mouse_pos in enumerate(mouse_positions):
             mouse_pos = np.array(mouse_pos)
             if self._target_idx[player_idx] != -1:  # mouse was on a target
-                #dist = self._euclid_dist(self._pos[self._target_idx[player_idx]] - mouse_pos)
                 dist = _euclid_dist(self._pos[self._target_idx[player_idx]] - mouse_pos)
                 if dist < conf.ant_radius:  # mouse is still on the target
                     t = time.time()
@@ -72,10 +71,7 @@ class Engine:
 
     def _consume_occupation_dict(self, occupations, out):
         if len(occupations) == 2 and occupations[0] == occupations[1]:  # Both players occupied the same target
-            # if not np.isnan(shares[target_idx[0]]):  # A shared target is occupied
-            #if ant_kind[target_idx[0]] == shared_0 or ant_kind[target_idx[0]] == shared_1:  # A shared target is occupied
             if ant_kind.is_shared(self._kinds[self._target_idx[0]]):
-                #score_gain = self._shares_to_scores(shares[target_idx[0]])
                 score_gain = list(ant_kind.get_score(self._kinds[self._target_idx[0]]))
                 t = time.time()
                 for i in [0, 1]:
@@ -87,20 +83,6 @@ class Engine:
                 for i in [0, 1]:
                     self._target_idx[i] = -1
                     self._target_occupation_date[i] = 0.
-
-
-                #self._score_state[0], self._score_state[1] = shares_to_scores(shares[target_idx[0]])
-                #for i in [0, 1]:
-                #    self._score[i] += int(self._score_state[i])
-                #t = time.time()
-                #self._score_animation_end[0], self._score_animation_end[1] = t + conf.occupied_animation_time, t + conf.occupied_animation_time
-                #out[0], out[1] = -1 * target_idx[0], -1 * target_idx[1]
-
-                #self._place_ant(self._target_idx[0])
-
-                #for player_idx in [0, 1]:
-                #    target_idx[player_idx] = -1
-                #    target_occupation_date[player_idx] = 0.
             else:  # Edge case: Both players occupied a not shared target within the same time (< 1/60s)
                 self._score[0] += .5  # TODO
                 self._score[1] += .5
@@ -110,20 +92,10 @@ class Engine:
         return out
 
     def _occupied(self, player_idx):
-        #global target_idx, target_occupation_date, score
-        # if np.isnan(shares[target_idx[player_idx]]):  # Not a shared target
-        #target_kind = ant_kind[target_idx[player_idx]]
-        #if target_kind == compet_0 or target_kind == compet_1:  # Not a shared target
         if not ant_kind.is_shared(self._kinds[self._target_idx[player_idx]]):
-            # pos[target_idx[player_idx]] = np.array([np.nan, np.nan])
-            # add_rand_ant()
-
-#            print(player_idx)
             reward = ant_kind.get_score(self._kinds[self._target_idx[player_idx]])
             self._score[player_idx] += reward
             self._score_state[player_idx] = reward + .999
-            #self._score[player_idx] += conf.competitive_reward
-            #self._score_state[player_idx] = conf.competitive_reward + .999
             self._score_animation_end[player_idx] = time.time() + conf.occupied_animation_time
 
             self._place_ant(self._target_idx[player_idx])  # TODO rename place_ant?
@@ -137,10 +109,7 @@ class Engine:
 
     def _check_for_target(self, i, mouse_pos):
         for k, p in enumerate(self._pos):
-            #dist = self._euclid_dist(p - mouse_pos)
             dist = _euclid_dist(p - mouse_pos)
-            # is_cooperative = not np.isnan(shares[k])
-            # is_cooperative = ant_kind[k] == shared_0 or ant_kind[k] == shared_1
             is_shared = ant_kind.is_shared(self._kinds[k])
             is_occupied_by_opponent = self._target_idx[(i - 1) % 2] == k
             if dist < conf.ant_radius and (is_shared or not is_occupied_by_opponent):

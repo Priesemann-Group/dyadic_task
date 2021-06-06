@@ -4,7 +4,7 @@ import numpy as np
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor
 from configuration import conf
-from backend import engine_old, data_depositor
+from backend import data_depositor
 from backend.engine import Engine
 from backend.game_scheduler import GameScheduler
 
@@ -21,7 +21,6 @@ class Server(DatagramProtocol):
         self._player_ping = [-1., -1.]
         self._player_scale_factor = [-1., -1.]
 
-        #engine_old.load()
         self._engine = Engine()
         reactor.listenUDP(conf.server_port, self)
 
@@ -82,7 +81,6 @@ class Server(DatagramProtocol):
         data_depositor.close()
 
     def _tick(self):
-        #game_state = engine_old.produce_next_game_state(self._player_pos)
         game_state = self._engine.produce_next_game_state(self._player_pos)
         game_state = self._add_server_info(game_state)
         self._send_packet(game_state)

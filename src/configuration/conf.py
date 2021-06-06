@@ -24,7 +24,6 @@ countdown_font_size = 64
 popup_font_size = 42
 font_color = (0, 0, 0, 255)
 background_color = (255, 255, 255)
-#score_chart_max_score = 30
 score_chart_max_score = 1./time_to_occupy * lap_time * 8 * 1/2  # 8 is the average reward for cooperation
 margin_color = (0, 0, 0)
 player_radius = 10

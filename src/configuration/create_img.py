@@ -45,24 +45,6 @@ for i in range(13, 16):
     draw_shared_circ(i/16.)
 for i in range(5, 8):
     draw_shared_circ(i/16., col_0=conf.competitive_reward_color, col_1=conf.ant_base_color)
-#for i in range(5, 8):
-#    draw_shared_circ(i/16., second_col=conf.ant_base_color, reverse=True)
-
-#for i in range(17):
-#    draw.ellipse((0, 0, conf.ant_img_size, conf.ant_img_size),
-#                 fill=conf.player_colors[1])
-#    draw.pieslice((0, 0, conf.ant_img_size, conf.ant_img_size),
-#                  start=frac_to_deg(0),
-#                  end=frac_to_deg(i/16.),
-#                  fill=conf.player_colors[0])
-#    im.save(output_folder_path + f'/circ_{i}.png', quality=100)
-
-#draw.ellipse((0, 0, conf.ant_img_size, conf.ant_img_size), fill=conf.player_colors[0])
-#im.save(output_folder_path + f'/circ_{100}.png', quality=100)
-
-#draw.ellipse((0, 0, conf.ant_img_size, conf.ant_img_size), fill=conf.ant_base_color)
-#im.save(output_folder_path + f'/circ.png', quality=100)
-
 
 for i in [0, 1]:
     draw.ellipse((0, 0, conf.ant_img_size, conf.ant_img_size),

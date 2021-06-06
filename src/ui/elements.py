@@ -22,7 +22,6 @@ class TargetIndicator(Circle):
         self.radius = (target_ant.scale * conf.ant_img_size / 2.) * (1. - progress)
         if target_ant.is_competitive():
             self.opacity = 255 * (1 - progress)
-            #self.opacity = 150
         else:
             self.opacity = 100 * (1 - progress)
 
@@ -90,7 +89,6 @@ class Ant(Sprite):
         return self._share
 
     def is_competitive(self):
-        #return not ant_kind.is_shared(ant_kind.AntKind(self._share))
         return not ant_kind.is_shared(self._share)
 
     def _set_share(self, new_share):
@@ -105,10 +103,6 @@ class Ant(Sprite):
             img = image.load('../res/img/circ_0.png')  # TODO this covers init process, refactor this!
         else:
             img = image.load(f'../res/img/circ_{int(self._share)}.png')
-            #if self._player_idx == 0:
-            #    img = image.load(f'../res/img/circ_{int(100 * self._share)}.png')
-            #else:
-            #    img = image.load(f'../res/img/circ_{int(100 * (1 - self._share))}.png')
         img.anchor_x = img.width // 2
         img.anchor_y = img.height // 2
         return img

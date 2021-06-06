@@ -109,14 +109,10 @@ class UdpClient(DatagramProtocol):
                 self._next_round_start = -1
                 self._ui.set_start_time(-1)
         elif self._rec_packets.qsize() > 0:
-            #self._ui.set_start_time(self._next_round_start)
             packet = self._get_newest_packet()
             packet = packet[1:]  # throw first, general header away
             target_states = list(packet[:2, 2])
             score_states = list(packet[2, 2:])
-            #if self._player_idx == 1:  # We are the second player
-            #    target_states.reverse()
-            #    score_states.reverse()
             self._ui.set_values(
                 player_pos=packet[0, :2],  # TODO to player 0 and 1
                 opponent_pos=packet[1, :2],
@@ -128,8 +124,6 @@ class UdpClient(DatagramProtocol):
                 ant_rad=np.array([c.ant_radius] * c.ant_amount),  # TODO del
                 ant_shares=packet[3:, 2],  # TODO rename
             )
-                #ant_rad=packet[3:, 2],
-                #ant_shares=packet[3:, 3])
 
 
 client = UdpClient()
