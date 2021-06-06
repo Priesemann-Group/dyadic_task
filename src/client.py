@@ -2,7 +2,6 @@ import pickle
 import sys
 import time
 import numpy
-import numpy as np
 
 from ui.ui import UI
 from configuration import conf as c
@@ -47,25 +46,32 @@ class UdpClient(DatagramProtocol):
         self._check_if_ui_exits()
 
     def datagramReceived(self, datagram, address):
-        if self._player_idx == -1:
-            self._player_idx = int(pickle.loads(datagram))  # First datagram contains the index
-            self._opponent_idx = (self._player_idx - 1) % 2
-            self._ui.set_player_idx(self._player_idx)
-            print(f'this client got player number: {self._player_idx}')
-        else:
-            packet = pickle.loads(datagram)
-            if isinstance(packet, numpy.ndarray):
-                self._rec_packets.put(packet)
-            elif isinstance(packet, bytes):
-                if str(packet) == str(b'ping request answer'):
-                    self._ping = (time.time() - self._ping_request_start) * 1000  # in milliseconds
-                    self._ping_request_start = -1.
-            elif isinstance(packet, float):
-                self._next_round_start = packet
-                pass  # TODO
+        packet = pickle.loads(datagram)
+        if isinstance(packet, int) and self._player_idx == -1:
+            self._set_player_idx(index=packet)
+        elif isinstance(packet, numpy.ndarray):
+            self._rec_packets.put(packet)
+        elif isinstance(packet, bytes):
+            self._process_msg(msg=packet)
+        elif isinstance(packet, float):
+            self._next_round_start = packet
+
+    def _set_player_idx(self, index):
+        self._player_idx = index
+        self._opponent_idx = (self._player_idx - 1) % 2
+        self._ui.set_player_idx(self._player_idx)
+        print(f'This client got player number: {self._player_idx}.')
+
+    def _process_msg(self, msg):
+        if str(msg) == str(b'ping request answer'):
+            self._ping = (time.time() - self._ping_request_start) * 1000  # in milliseconds
+            self._ping_request_start = -1.
+        elif str(msg) == str(b'server is full'):
+            print('Server is full.')
+            self._close()
 
     def connectionRefused(self):
-        print("Connection Refused")
+        print("Connection Refused.")
         self._close()
 
     def _check_if_ui_exits(self):
@@ -85,7 +91,7 @@ class UdpClient(DatagramProtocol):
         if self.transport is not None:  # transport is None if server is closed
             self.transport.write(pickle.dumps(packet))
         else:
-            print('No connection to server')
+            print('No connection to server.')
             self._close()
 
     def _get_newest_packet(self):
@@ -114,16 +120,14 @@ class UdpClient(DatagramProtocol):
             target_states = list(packet[:2, 2])
             score_states = list(packet[2, 2:])
             self._ui.set_values(
-                player_pos=packet[0, :2],  # TODO to player 0 and 1
-                opponent_pos=packet[1, :2],
+                player_0_pos=packet[0, :2],
+                player_1_pos=packet[1, :2],
                 target_states=target_states,
                 score_states=score_states,
                 scores=list(packet[2, :2]),
                 pings=list(packet[:2, 3]),
                 ant_pos=packet[3:, :2],
-                ant_rad=np.array([c.ant_radius] * c.ant_amount),  # TODO del
-                ant_shares=packet[3:, 2],  # TODO rename
-            )
+                ant_kinds=packet[3:, 2])
 
 
 client = UdpClient()

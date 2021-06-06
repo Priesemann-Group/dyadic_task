@@ -1,10 +1,6 @@
-
 # Game config
-#ant_amount = 10
 ant_amount = 6
 ant_radius = 50
-min_radius = 42  # TODO delete
-max_radius = 60
 velocity = 3
 time_to_occupy = .5
 occupied_animation_time = .3  # should be < time_to_occupy
@@ -28,7 +24,6 @@ score_chart_max_score = 1./time_to_occupy * lap_time * 8 * 1/2  # 8 is the avera
 margin_color = (0, 0, 0)
 player_radius = 10
 ant_base_color = (214, 245, 191)
-ant_color = (100, 100, 255)  # TODO delete
 target_opacity = 255
 popup_height = 64
 score_chart_bg_color = (32, 32, 32)

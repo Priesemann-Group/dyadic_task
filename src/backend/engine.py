@@ -45,7 +45,7 @@ class Engine:
         self._vel = np.full((conf.ant_amount, 2), np.nan, dtype='float64')
         self._kinds = [0, 0, 3, 3, 6, 6]  # will be overridden
         for i in range(conf.ant_amount):
-            self._place_ant(i)
+            self._replace_ant(i)
 
     def _get_target_state(self, mouse_positions):
         out = [-1, -1]
@@ -72,23 +72,29 @@ class Engine:
     def _consume_occupation_dict(self, occupations, out):
         if len(occupations) == 2 and occupations[0] == occupations[1]:  # Both players occupied the same target
             if ant_kind.is_shared(self._kinds[self._target_idx[0]]):
-                score_gain = list(ant_kind.get_score(self._kinds[self._target_idx[0]]))
-                t = time.time()
-                for i in [0, 1]:
-                    self._score_state[i] = score_gain[i] + .999
-                    self._score[i] += int(self._score_state[i])
-                    self._score_animation_end[i] = t + conf.occupied_animation_time
-                    out[i] = -1 * self._target_idx[i]
-                self._place_ant(self._target_idx[0])
-                for i in [0, 1]:
-                    self._target_idx[i] = -1
-                    self._target_occupation_date[i] = 0.
+                out = self._consume_shared_target(out)
             else:  # Edge case: Both players occupied a not shared target within the same time (< 1/60s)
-                self._score[0] += .5  # TODO
-                self._score[1] += .5
+                if self._target_occupation_date[0] < self._target_occupation_date[1]:  # TODO not tested jet
+                    out[1] = float(self._occupied(1))
+                else:
+                    out[0] = float(self._occupied(0))
         else:  # Consume occupations
             for player_idx in occupations.keys():
                 out[player_idx] = float(self._occupied(player_idx))
+        return out
+
+    def _consume_shared_target(self, out):
+        score_gain = list(ant_kind.get_score(self._kinds[self._target_idx[0]]))
+        t = time.time()
+        for i in [0, 1]:
+            self._score_state[i] = score_gain[i] + .999
+            self._score[i] += int(self._score_state[i])
+            self._score_animation_end[i] = t + conf.occupied_animation_time
+            out[i] = -1 * self._target_idx[i]
+        self._replace_ant(self._target_idx[0])
+        for i in [0, 1]:
+            self._target_idx[i] = -1
+            self._target_occupation_date[i] = 0.
         return out
 
     def _occupied(self, player_idx):
@@ -98,7 +104,7 @@ class Engine:
             self._score_state[player_idx] = reward + .999
             self._score_animation_end[player_idx] = time.time() + conf.occupied_animation_time
 
-            self._place_ant(self._target_idx[player_idx])  # TODO rename place_ant?
+            self._replace_ant(self._target_idx[player_idx])
 
             target = self._target_idx[player_idx]
             self._target_idx[player_idx] = -1
@@ -166,7 +172,7 @@ class Engine:
         diff = (self._pos[i] - self._vel[i]) - (self._pos[k] - self._vel[k])
         return _euclid_dist(diff) < 2 * conf.ant_radius
 
-    def _place_ant(self, ant_idx):
+    def _replace_ant(self, ant_idx):
         angle = random.uniform(0., np.pi * 2)
         self._pos[ant_idx] = self._get_free_ant_pos()
         self._vel[ant_idx] = np.array([np.cos(angle), np.sin(angle)]) * conf.velocity
@@ -174,15 +180,15 @@ class Engine:
 
     def _get_free_ant_pos(self):
         pos = np.random.rand(2) * conf.field_size
-        is_valid = True  # TODO rename
-        while is_valid:  # randomize until no collision to other points.
-            is_valid = False
+        valid = False
+        while not valid:  # randomize until no collision to other points.
+            valid = True
             for i in range(conf.ant_amount):
                 if not np.isnan(self._pos[i][0]):
                     dist = _euclid_dist(self._pos[i] - pos)
                     if dist < 2 * conf.ant_radius:  # collision with an existing ant
                         pos = np.random.rand(2) * conf.field_size
-                        is_valid = True
+                        valid = False
                         break
         return pos.astype('float64')
 
@@ -196,7 +202,7 @@ def _euclid_dist(vec):
 def _collision_calc(pos):
     coll_count = 0
     collisions = np.array([[-1, -1]] * conf.ant_amount)
-    already_calculated = [False] * conf.ant_amount  # TODO resize?
+    already_calculated = [False] * conf.ant_amount
 
     for i in range(conf.ant_amount):
         for k in range(i + 1, conf.ant_amount):

@@ -34,25 +34,22 @@ class UI:
         self._occupation_sound_player = []
         self._init_ui_elements()
 
-        self._player_idx = -2  # TODO del
+        self._player_idx = -2
         self._ants = self._generate_ants()
 
         # Register event handlers
-        if self._on_close_func is not None:  # TODO del this
-            self._win.event(self.on_close)
+        self._win.event(self.on_close)
         self._win.event(self.on_draw)
         self._win.event(self.on_mouse_motion)
 
-    def set_values(self, pings, player_pos, opponent_pos, target_states,
-                   score_states, scores, ant_pos, ant_rad, ant_shares):
+    def set_values(self, pings, player_0_pos, player_1_pos, target_states,
+                   score_states, scores, ant_pos, ant_kinds):
         self._win.set_scores_and_pings(scores, pings, score_states)
-        #self._player_circles[0].position = tuple(self._win.to_win_coordinates(player_pos))
-        #self._player_circles[1].position = tuple(self._win.to_win_coordinates(opponent_pos))
-        self._player_circles[0].place(tuple(self._win.to_win_coordinates(player_pos)), self._win.get_scale_factor())
-        self._player_circles[1].place(tuple(self._win.to_win_coordinates(opponent_pos)), self._win.get_scale_factor())
+        self._player_circles[0].place(tuple(self._win.to_win_coordinates(player_0_pos)), self._win.get_scale_factor())
+        self._player_circles[1].place(tuple(self._win.to_win_coordinates(player_1_pos)), self._win.get_scale_factor())
         self._set_ants(ant_pos=self._win.to_win_coordinates(ant_pos),
-                       ant_rad=ant_rad * self._win.get_scale_factor(),
-                       ant_shares=ant_shares)
+                       ant_rad=[c.ant_radius * self._win.get_scale_factor()] * c.ant_amount,  # shared radius
+                       ant_kinds=ant_kinds)
         self._set_target_states(target_states, score_states)
         self._set_score_states(score_states, target_states)
         for popup in self._score_popup_labels:
@@ -90,8 +87,6 @@ class UI:
     def set_player_idx(self, player_idx):
         self._player_idx = player_idx
         self._win.set_player_idx(player_idx)
-        #for ant in self._ants:
-        #    ant.set_player_idx(player_idx)
 
     def _init_ui_elements(self):
         for i in [0, 1]:
@@ -99,10 +94,6 @@ class UI:
             player_group = OrderedGroup(7 - i)
             player_pointer_group = OrderedGroup(9 - i)
             player_color = c.player_colors[i]
-            #self._player_circles.append(Circle(-1000, 0, c.player_radius,
-            #                                   color=player_color,
-            #                                   batch=self._batch,
-            #                                   group=player_group))
             self._player_circles.append(Pointer(player_color=player_color,
                                                 player_group=player_group,
                                                 player_pointer_group=player_pointer_group,
@@ -118,16 +109,14 @@ class UI:
     def _generate_ants(self):
         ants = []
         for _ in range(c.ant_amount):
-            ants.append(Ant(share=np.nan,
+            ants.append(Ant(kind=np.nan,
                             batch=self._batch,
                             group=self._ant_group))
         return ants
 
-    def _set_ants(self, ant_pos, ant_rad, ant_shares):
-        for i in range(len(ant_pos)):
-            self._ants[i].update_ant(ant_pos[i], ant_rad[i], ant_shares[i])
-        for i in range(len(ant_pos), c.ant_amount):
-            self._ants[i].update_ant((-1000, -1000), 1)
+    def _set_ants(self, ant_pos, ant_rad, ant_kinds):
+        for i in range(c.ant_amount):
+            self._ants[i].update_ant(ant_pos[i], ant_rad[i], ant_kinds[i])
 
     def _hide_ants(self):
         for ant in self._ants:

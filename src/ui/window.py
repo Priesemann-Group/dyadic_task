@@ -5,11 +5,6 @@ from pyglet import clock
 from configuration import conf
 import numpy
 
-label_kwargs = {'x': 0, 'y': 0,
-                'font_name': conf.font_name,
-                'font_size': conf.font_size,
-                'color': conf.font_color}
-
 
 class ScaleFieldWindow:
     def __init__(self, batch, bg_group, fg_group, debug_overlay=False, *args, **kwargs):
@@ -44,7 +39,6 @@ class ScaleFieldWindow:
     def set_player_idx(self, player_idx):
         if self._debug_overlay:
             self._debug_labels._player_number = player_idx
-        #self._score_chart._player_idx = player_idx  # TODO delete player_idx mechanic in score chart
 
     def on_key_release(self, symbol, modifiers):
         if symbol == 102:  # 102 == symbol for 'f'
@@ -80,7 +74,7 @@ class ScaleFieldWindow:
             self._countdown_label.text = f'{num}'
 
     def on_resize(self, width, height):
-        self._scale_factor = None  # TODO del?
+        self._scale_factor = -1
         self._origin = [0, 0]
 
         aspect_ratio_client = width / height
@@ -93,7 +87,7 @@ class ScaleFieldWindow:
             game_width = height * aspect_ratio_game
             self._background.width = game_width * (1 - score_chart_share)
 
-            self._scale_factor = self._background.width / conf.field_size[0]  # TODO rename background?
+            self._scale_factor = self._background.width / conf.field_size[0]
 
             self._black_margins[0].width = (width - game_width) // 2
             self._black_margins[1].width = (width - game_width) // 2
@@ -160,7 +154,6 @@ class ScaleFieldWindow:
     class ScoreChart(Rectangle):
         def __init__(self, batch, fg_group, bg_group):
             super().__init__(0, 0, 1, 1, color=conf.score_chart_bg_color, batch=batch, group=bg_group)
-            self._player_idx = 0  # TODO del
             self._scores = [0, 0]
             self._bars = [Rectangle(0, 0, 1, 1, color=conf.player_colors[0], batch=batch, group=fg_group),
                           Rectangle(0, 0, 1, 1, color=conf.player_colors[1], batch=batch, group=fg_group)]
@@ -182,13 +175,12 @@ class ScaleFieldWindow:
 
         def _update_bars(self, score_states=None):
             for i, bar in enumerate(self._bars):
-                score_idx = (i - self._player_idx) % 2
                 if score_states is None or numpy.isnan(score_states[i]):
-                    bar.height = self.height * self._scores[score_idx] / conf.score_chart_max_score
+                    bar.height = self.height * self._scores[i] / conf.score_chart_max_score
                 else:
                     progress = score_states[i] - int(score_states[i])
                     fraction_to_show = int(score_states[i]) * (1. - progress)
-                    score_to_show = self._scores[score_idx] - int(score_states[i]) + fraction_to_show
+                    score_to_show = self._scores[i] - int(score_states[i]) + fraction_to_show
                     bar.height = self.height * score_to_show / conf.score_chart_max_score
 
     class DebugLabels:

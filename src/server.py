@@ -50,9 +50,10 @@ class Server(DatagramProtocol):
             self._deregister_player(self._player_addrs.index(address))
         elif msg == b'connect':
             player_idx = self._register_new_player(address)
-            self.transport.write(pickle.dumps(player_idx), address)
-            self._game_scheduler.next_round()
-            self._game_scheduler.wakeup()
+            if player_idx is not None:
+                self.transport.write(pickle.dumps(player_idx), address)
+                self._game_scheduler.next_round()
+                self._game_scheduler.wakeup()
 
     def _msg_to_all(self, msg):
         for address in self._player_addrs:
@@ -65,8 +66,8 @@ class Server(DatagramProtocol):
             if lc < 0.:
                 self._player_addrs[player_idx] = address
                 self._player_last_contact[player_idx] = time.time()
-                #self.new_round(reset=True)
                 return player_idx
+        self.transport.write(pickle.dumps(b'server is full'), address)
         # TODO send server is full message
 
     def _consume_client_packet(self, packet, client_idx):

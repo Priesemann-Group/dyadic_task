@@ -63,10 +63,10 @@ class Pointer(Circle):
 
 
 class Ant(Sprite):
-    def __init__(self, share, batch, group):
+    def __init__(self, kind, batch, group):
         self._player_idx = -1
-        self._share = share  # TODO rename?
-        super().__init__(img=self._get_center_circle(), batch=batch, group=group)
+        self._kind = kind
+        super().__init__(img=image.load('../res/img/circ_0.png'), batch=batch, group=group)
         self.hide()
 
     def update_ant(self, pos, rad, share=None):
@@ -78,31 +78,25 @@ class Ant(Sprite):
         self.x = -1000
 
     def _share_changed(self, current_share):
-        if not (np.isnan(current_share) and np.isnan(self._share)):  # they are at least not both None
-            if np.isnan(current_share) or np.isnan(self._share):  # only one is None -> Change in share
+        if not (np.isnan(current_share) and np.isnan(self._kind)):  # they are at least not both None
+            if np.isnan(current_share) or np.isnan(self._kind):  # only one is None -> Change in share
                 return True
-            elif int(current_share * 100) != int(self._share * 100):  # No one is none -> Check if values changed
+            elif int(current_share * 100) != int(self._kind * 100):  # No one is none -> Check if values changed
                 return True
         return False
 
     def get_share(self):
-        return self._share
+        return self._kind
 
     def is_competitive(self):
-        return not ant_kind.is_shared(self._share)
+        return not ant_kind.is_shared(self._kind)
 
     def _set_share(self, new_share):
-        self._share = new_share
+        self._kind = new_share
         self.image = self._get_center_circle()
 
-    def set_player_idx(self, player_idx):  # TODO del
-        self._player_idx = player_idx
-
     def _get_center_circle(self):
-        if np.isnan(self._share):
-            img = image.load('../res/img/circ_0.png')  # TODO this covers init process, refactor this!
-        else:
-            img = image.load(f'../res/img/circ_{int(self._share)}.png')
+        img = image.load(f'../res/img/circ_{int(self._kind)}.png')
         img.anchor_x = img.width // 2
         img.anchor_y = img.height // 2
         return img
