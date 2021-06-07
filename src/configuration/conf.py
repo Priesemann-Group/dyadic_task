@@ -46,7 +46,7 @@ score_chart_width = 100  # field_size[0] + score_chart_width = 1920
 server_ip = '134.76.24.227'
 server_port = 8767
 
-time_until_disconnect = 60
+time_until_disconnect = lap_time
 
 output_folder_name = 'game_records'
 date_format = '%d-%m-%y_%H-%M-%S'

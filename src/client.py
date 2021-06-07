@@ -13,6 +13,10 @@ from queue import Queue
 from pyglet import app, clock
 
 
+#from pyglet.gl.lib.GLException
+from pyglet.gl.lib import GLException
+
+
 class UdpClient(DatagramProtocol):
     def __init__(self):
         self._ping = 0.
@@ -52,7 +56,7 @@ class UdpClient(DatagramProtocol):
         elif isinstance(packet, numpy.ndarray):
             self._rec_packets.put(packet)
         elif isinstance(packet, bytes):
-            self._process_msg(msg=packet)
+            self._process_msg(msg=packet.decode())
         elif isinstance(packet, float):
             self._next_round_start = packet
 
@@ -63,11 +67,11 @@ class UdpClient(DatagramProtocol):
         print(f'This client got player number: {self._player_idx}.')
 
     def _process_msg(self, msg):
-        if str(msg) == str(b'ping request answer'):
+        if msg == 'ping request answer':
             self._ping = (time.time() - self._ping_request_start) * 1000  # in milliseconds
             self._ping_request_start = -1.
-        elif str(msg) == str(b'server is full'):
-            print('Server is full.')
+        elif msg == 'Server is full.' or msg == 'Timeout due to inactivity.':
+            print(msg)
             self._close()
 
     def connectionRefused(self):
@@ -103,7 +107,8 @@ class UdpClient(DatagramProtocol):
 
     def _close(self):
         self._ui.close_window()
-        reactor.stop()
+        if reactor.running:
+            reactor.stop()
 
     def _close_form_ui_thread(self):
         self._end_reactor_thread = True

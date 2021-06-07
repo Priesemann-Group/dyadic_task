@@ -15,12 +15,6 @@ class OccupationSoundPlayer(Player):
         self._reward_player.volume = volume
         self.volume = volume
 
-    def _force_play(self, sound):
-        self.delete()
-        self.next_source()
-        self.queue(sound)
-        self.play()
-
     def occupying(self):
         self._force_play(occupying_sound)
 
@@ -31,3 +25,8 @@ class OccupationSoundPlayer(Player):
         self._reward_player.queue(scored_sound)
         self._reward_player.play()
 
+    def _force_play(self, sound):
+        self.delete()
+        self.next_source()
+        self.queue(sound)
+        self.play()

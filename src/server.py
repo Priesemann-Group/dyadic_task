@@ -67,8 +67,7 @@ class Server(DatagramProtocol):
                 self._player_addrs[player_idx] = address
                 self._player_last_contact[player_idx] = time.time()
                 return player_idx
-        self.transport.write(pickle.dumps(b'server is full'), address)
-        # TODO send server is full message
+        self.transport.write(pickle.dumps(b'Server is full.'), address)
 
     def _consume_client_packet(self, packet, client_idx):
         self._player_last_contact[client_idx] = time.time()
@@ -110,6 +109,7 @@ class Server(DatagramProtocol):
                 self.transport.write(packet, addr)
 
     def _deregister_player(self, player_idx):
+        self.transport.write(pickle.dumps(b'Timeout due to inactivity.'), self._player_addrs[player_idx])
         self._player_addrs[player_idx] = None
         self._player_last_contact[player_idx] = -1.
         self._player_pos[player_idx] = (-1000, -1000)
