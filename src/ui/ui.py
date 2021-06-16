@@ -75,14 +75,16 @@ class UI:
         self._win.close()
 
     def on_close(self):
-        self._on_close_func()
+        if self._on_close_func is not None:
+            self._on_close_func()
 
     def on_draw(self):
         self._win.on_draw()
         self._batch.draw()
 
     def on_mouse_motion(self, x, y, dx, dy):  # Calls clients function to send position to server
-        self._on_motion_func(tuple(self._win.to_win_coordinates((x, y), reverse=True)))
+        if self._on_motion_func is not None:
+            self._on_motion_func(tuple(self._win.to_win_coordinates((x, y), reverse=True)))
 
     def set_player_idx(self, player_idx):
         self._player_idx = player_idx

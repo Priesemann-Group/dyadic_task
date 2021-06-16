@@ -13,10 +13,6 @@ from queue import Queue
 from pyglet import app, clock
 
 
-#from pyglet.gl.lib.GLException
-from pyglet.gl.lib import GLException
-
-
 class UdpClient(DatagramProtocol):
     def __init__(self):
         self._ping = 0.
@@ -24,11 +20,11 @@ class UdpClient(DatagramProtocol):
         self._rec_packets = Queue()
         self._end_reactor_thread = False
         self._player_idx = -1
-        self._opponent_idx = None
+        self._opponent_idx = None  # TODO still needed?
         self._next_round_start = -1.
         self._ui = UI(debug_overlay='debug' in sys.argv,
                       on_motion=self._send_mouse_pos,
-                      on_close=self._close_form_ui_thread)
+                      on_close=self._close_from_ui_thread)
 
         reactor.listenUDP(0, self)
         Thread(target=reactor.run,
@@ -110,7 +106,7 @@ class UdpClient(DatagramProtocol):
         if reactor.running:
             reactor.stop()
 
-    def _close_form_ui_thread(self):
+    def _close_from_ui_thread(self):
         self._end_reactor_thread = True
 
     def _consume_packet(self, dx):
@@ -122,13 +118,11 @@ class UdpClient(DatagramProtocol):
         elif self._rec_packets.qsize() > 0:
             packet = self._get_newest_packet()
             packet = packet[1:]  # throw first, general header away
-            target_states = list(packet[:2, 2])
-            score_states = list(packet[2, 2:])
             self._ui.set_values(
                 player_0_pos=packet[0, :2],
                 player_1_pos=packet[1, :2],
-                target_states=target_states,
-                score_states=score_states,
+                target_states=list(packet[:2, 2]),
+                score_states=list(packet[2, 2:]),
                 scores=list(packet[2, :2]),
                 pings=list(packet[:2, 3]),
                 ant_pos=packet[3:, :2],
