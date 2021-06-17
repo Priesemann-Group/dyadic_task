@@ -4,7 +4,7 @@ Dyadic Task
 Rules
 -----
 
-This task is a competetive and/or cooperative game where players increase their score depending on the type of dot they conquer. The blue/orange cooperative dots yield more reward on average (on avg. 8 points per dot) and requires that both players hover over them. However the reward of each of them is unfairly distributed. That requires social cooperation to alternate between the blue and orange dots such that both players receive similar total award. The green competitive dots on the other hand yield less reward on average (6) but doesn't requires the cooperation of the other player.
+This task is a competetive and/or cooperative game where players increase their score depending on the type of dot they conquer. The blue/orange cooperative dots yield more reward on average (on avg. 8 points per dot) and require that both players hover over them. However the reward of each of them is unfairly distributed. That requires social cooperation to alternate between the blue and orange dots such that both players receive similar total award. The green competitive dots on the other hand yield less reward on average (6) but doesn't requires the cooperation of the other player.
 
 ![til](./res/vid.gif)
 
