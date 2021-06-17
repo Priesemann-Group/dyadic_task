@@ -3,6 +3,9 @@ Dyadic Task
 
 ![til](./res/vid.gif)
 
+
+Dyadic Task is a competition and/or cooperation game where players gain score depending on the type of dot they conquer. The blue/orange cooperative dots yield more reward on average (8), but the reward of each of them is unfair distributed. That enforces some kind of social cooperation to split the reward in a fair manner. The green competitive dots on the other hand yield less reward on average (6) but can be occupied without the other player.
+
 Play on Server
 --------
 
