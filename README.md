@@ -1,12 +1,20 @@
-AntHunt
---------
+Dyadic Task
+=========
+
+Rules
+-----
+
+This task is a competetive and/or cooperative game where players increase their score depending on the type of dot they conquer. The blue/orange cooperative dots yield more reward on average (on avg. 8 points per dot) and require that both players hover over them. However the reward of each of them is unfairly distributed. That requires social cooperation to alternate between the predominantly blue and the predominantly orange dots such that both players receive similar total reward. The green competitive dots on the other hand yield less reward on average (6) but do not require the cooperation of the other player.
 
 ![til](./res/vid.gif)
 
-Play on the Server
+
+
+
+Play on Server
 --------
 
-In order to play online the following python modules should be installed, install them with the following command.
+In order to play online the following python modules should be installed, install them with the following command:
 
     pip3 install numpy pyglet twisted
 
@@ -14,17 +22,14 @@ Start the game with the following command:
 
     python3 client.py
 
-Note that this works only if the server is not full and if the server
-is online, which should be the case.
+Note that this works only if the server is not full and if the server is online, which should be the case.
 
-In order to test the multiplayer, two clients can be executed at the
-same time.
+In order to test the multiplayer, two clients can be executed at the same time.
 
 Host a local Server
 --------
 
-This method works independed from the multiplayer server and the
-internet connection. The following packages are required:
+This method works independed from server and internet connection. The following packages are required:
 
     pip3 install numpy pyglet twisted numba
 
@@ -44,5 +49,4 @@ And in order to join your local server run:
 
     python3 client.py local
 
-In order to test the multiplayer, two clients can be executed at the
-same time.
+In order to test the multiplayer, two clients can be executed at the same time.
