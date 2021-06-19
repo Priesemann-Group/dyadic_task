@@ -10,17 +10,25 @@ competitive_reward = 1
 cooperative_reward = 10
 
 pos_updates_ps = 60
-lap_time = 20
-update_amount = pos_updates_ps * lap_time  # 20 seconds
+#lap_time = 20  # for mouse control
+lap_time = 60
+update_amount = pos_updates_ps * lap_time
+
+# Control
+# WASD Control
+#wasd_speed = 8  # for moving dots
+wasd_speed = 16
+wasd_update_rate = 1/60
 
 # Appearance
 font_name = 'Arial'
 font_size = 20
+#font_size = 40
 countdown_font_size = 64
 popup_font_size = 42
 font_color = (0, 0, 0, 255)
 background_color = (255, 255, 255)
-score_chart_max_score = 1./time_to_occupy * lap_time * 8 * 1/2  # 8 is the average reward for cooperation
+score_chart_max_score = 1./time_to_occupy * lap_time * 8 * 1/3  # 8 is the average reward for cooperation, 1/3 is random
 margin_color = (0, 0, 0)
 player_radius = 10
 ant_base_color = (214, 245, 191)

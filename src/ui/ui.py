@@ -8,10 +8,11 @@ from pyglet.graphics import Batch, OrderedGroup
 from ui.sounds import OccupationSoundPlayer
 from ui.elements import TargetIndicator, Pointer, PopUpLabel, Ant
 from ui.window import ScaleFieldWindow
+from ui.wasd_controller import WasdController
 
 
 class UI:
-    def __init__(self, debug_overlay, on_motion, on_close):
+    def __init__(self, debug_overlay, on_motion, on_close, wasd_ctrl=False):
         self._on_motion_func = on_motion
         self._on_close_func = on_close
 
@@ -40,7 +41,11 @@ class UI:
         # Register event handlers
         self._win.event(self.on_close)
         self._win.event(self.on_draw)
-        self._win.event(self.on_mouse_motion)
+        if wasd_ctrl:
+            self._wasd_controller = WasdController(event_decorator=self._win.event,
+                                                   on_motion=on_motion)
+        else:
+            self._win.event(self.on_mouse_motion)
 
     def set_values(self, pings, player_0_pos, player_1_pos, target_states,
                    score_states, scores, ant_pos, ant_kinds):
