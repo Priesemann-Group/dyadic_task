@@ -4,7 +4,8 @@ import time
 import numpy
 
 from ui.ui import UI
-from configuration import conf as c
+from configuration import conf
+from configuration import paths
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor
 from threading import Thread
@@ -22,6 +23,16 @@ class UdpClient(DatagramProtocol):
         self._player_idx = -1
         self._opponent_idx = None  # TODO still needed?
         self._next_round_start = -1.
+
+        if 'dyadic' in sys.argv:
+            conf.background_color = conf.dyadic_background_color
+            conf.margin_color = conf.dyadic_margin_color
+            conf.score_chart_bg_color = conf.dyadic_score_chart_bg_color
+            conf.border_black = conf.dyadic_border_black
+            conf.font_color = conf.dyadic_font_color
+            paths.circ_prefix = paths.dyadic_circ_prefix
+            paths.target_indicator_prefix = paths.dyadic_target_indicator_prefix
+
         self._ui = UI(debug_overlay='debug' in sys.argv,
                       on_motion=self._send_pos,
                       on_close=self._close_from_ui_thread,
@@ -40,9 +51,9 @@ class UdpClient(DatagramProtocol):
         Called after protocol has started listening.
         """
         if 'local' in sys.argv:
-            self.transport.connect('127.0.0.1', c.server_port)
+            self.transport.connect('127.0.0.1', conf.server_port)
         else:
-            self.transport.connect(c.server_ip, c.server_port)
+            self.transport.connect(conf.server_ip, conf.server_port)
         self._send(b'connect')
         self._check_if_ui_exits()
 

@@ -1,0 +1,6 @@
+image_folder = 'desktop/'
+dyadic_image_folder = 'dyadic/'
+target_indicator_prefix = f'../res/img/{image_folder}target_indicator_'
+circ_prefix = f'../res/img/{image_folder}circ_'
+dyadic_target_indicator_prefix = f'../res/img/{dyadic_image_folder}target_indicator_'
+dyadic_circ_prefix = f'../res/img/{dyadic_image_folder}circ_'

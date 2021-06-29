@@ -1,6 +1,8 @@
 from pyglet.shapes import Circle
+
 from pyglet.text import Label
 from configuration import conf
+from configuration import paths
 from pyglet import image
 from pyglet.sprite import Sprite
 import numpy as np
@@ -34,7 +36,7 @@ class TargetIndicator(Circle):
         self._target_sprite.x = -1000
 
     def _get_sprite(self, player_idx):
-        img = image.load(f'../res/img/target_indicator_{player_idx}.png')
+        img = image.load(f'{paths.target_indicator_prefix}{player_idx}.png')
         img.anchor_x = img.width // 2
         img.anchor_y = img.height // 2
         return img
@@ -66,7 +68,7 @@ class Ant(Sprite):
     def __init__(self, kind, batch, group):
         self._player_idx = -1
         self._kind = kind
-        super().__init__(img=image.load('../res/img/circ_0.png'), batch=batch, group=group)
+        super().__init__(img=image.load(f'{paths.circ_prefix}0.png'), batch=batch, group=group)
         self.hide()
 
     def update_ant(self, pos, rad, share=None):
@@ -96,7 +98,7 @@ class Ant(Sprite):
         self.image = self._get_center_circle()
 
     def _get_center_circle(self):
-        img = image.load(f'../res/img/circ_{int(self._kind)}.png')
+        img = image.load(f'{paths.circ_prefix}{int(self._kind)}.png')
         img.anchor_x = img.width // 2
         img.anchor_y = img.height // 2
         return img

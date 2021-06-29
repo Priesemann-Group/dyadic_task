@@ -21,7 +21,7 @@ class WasdController:
         self._correct_to_boundaries()
         self._on_motion((self._x, self._y))
 
-    def _movement(self):
+    def _movement(self):  # TODO make speed euclidian
         if self._w_pressed:
             self._y += conf.wasd_speed
         if self._a_pressed:
