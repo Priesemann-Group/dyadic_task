@@ -18,6 +18,7 @@ update_amount = pos_updates_ps * lap_time
 # WASD Control
 #wasd_speed = 8  # for moving dots
 wasd_speed = 16
+wasd_diag_speed = wasd_speed/int((wasd_speed**2+wasd_speed**2)**.5)*wasd_speed
 wasd_update_rate = 1/60
 
 # Appearance

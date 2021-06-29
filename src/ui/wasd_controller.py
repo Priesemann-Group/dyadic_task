@@ -1,6 +1,7 @@
 from pyglet.window import key
 from pyglet import clock
 from configuration import conf
+import numpy
 
 
 class WasdController:
@@ -21,15 +22,33 @@ class WasdController:
         self._correct_to_boundaries()
         self._on_motion((self._x, self._y))
 
-    def _movement(self):  # TODO make speed euclidian
-        if self._w_pressed:
-            self._y += conf.wasd_speed
-        if self._a_pressed:
-            self._x -= conf.wasd_speed
-        if self._s_pressed:
-            self._y -= conf.wasd_speed
-        if self._d_pressed:
-            self._x += conf.wasd_speed
+    def _movement(self):
+        diag = False
+        if self._w_pressed and self._d_pressed:
+            self._y += conf.wasd_diag_speed
+            self._x += conf.wasd_diag_speed
+            diag = True
+        if self._w_pressed and self._a_pressed:
+            self._y += conf.wasd_diag_speed
+            self._x -= conf.wasd_diag_speed
+            diag = True
+        if self._s_pressed and self._d_pressed:
+            self._y -= conf.wasd_diag_speed
+            self._x += conf.wasd_diag_speed
+            diag = True
+        if self._s_pressed and self._a_pressed:
+            self._y -= conf.wasd_diag_speed
+            self._x -= conf.wasd_diag_speed
+            diag = True
+        if not diag:
+            if self._w_pressed:
+                self._y += conf.wasd_speed
+            if self._a_pressed:
+                self._x -= conf.wasd_speed
+            if self._s_pressed:
+                self._y -= conf.wasd_speed
+            if self._d_pressed:
+                self._x += conf.wasd_speed
 
     def _correct_to_boundaries(self):
         if self._x < 0:
