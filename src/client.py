@@ -24,6 +24,9 @@ class UdpClient(DatagramProtocol):
         self._opponent_idx = None  # TODO still needed?
         self._next_round_start = -1.
 
+        import pyglet  # TODO
+        pyglet.options['audio'] = ('pulse', 'openal')
+
         if 'dyadic' in sys.argv:
             conf.background_color = conf.dyadic_background_color
             conf.margin_color = conf.dyadic_margin_color
