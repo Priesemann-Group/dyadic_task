@@ -28,7 +28,6 @@ countdown_font_size = 64
 popup_font_size = 42
 score_chart_max_score = 1./time_to_occupy * lap_time * 8 * 1/3  # 8 is the average reward for cooperation, 1/3 is random
 player_radius = 10
-ant_base_color = (214, 245, 191)
 target_opacity = 255
 popup_height = 64
 
@@ -48,7 +47,8 @@ player_colors = [
     (87, 117, 180),  # clients player color
     (250, 114, 44)   # opponents color
 ]
-competitive_reward_color = (144, 190, 109)
+competitive_reward_color = (100, 100, 100)
+ant_base_color = (200, 200, 200)  # TODO rename
 
 # Sound
 player_volumes = [1., .4]
