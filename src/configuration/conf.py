@@ -4,6 +4,7 @@ ant_radius = 50
 velocity = 3
 time_to_occupy = .5
 occupied_animation_time = .3  # should be < time_to_occupy
+ant_movement = True
 
 time_before_round = 2
 competitive_reward = 1
@@ -69,6 +70,8 @@ date_format = '%d-%m-%y_%H-%M-%S'
 _rows = ant_amount + 4  # For the 4 headers
 _cols = 4  # For x, y, rad, share values for each ant
 packet_shape = (_rows, _cols)
+
+simultaneous_games = 2
 
 # For sprite creation
 ant_img_size = 256

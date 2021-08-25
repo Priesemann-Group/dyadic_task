@@ -20,8 +20,6 @@ class UdpClient(DatagramProtocol):
         self._ping_request_start = -1.
         self._rec_packets = Queue()
         self._end_reactor_thread = False
-        self._player_idx = -1
-        self._opponent_idx = None  # TODO still needed?
         self._next_round_start = -1.
 
         import pyglet  # TODO
@@ -62,20 +60,12 @@ class UdpClient(DatagramProtocol):
 
     def datagramReceived(self, datagram, address):
         packet = pickle.loads(datagram)
-        if isinstance(packet, int) and self._player_idx == -1:
-            self._set_player_idx(index=packet)
-        elif isinstance(packet, numpy.ndarray):
+        if isinstance(packet, numpy.ndarray):
             self._rec_packets.put(packet)
         elif isinstance(packet, bytes):
             self._process_msg(msg=packet.decode())
         elif isinstance(packet, float):
             self._next_round_start = packet
-
-    def _set_player_idx(self, index):
-        self._player_idx = index
-        self._opponent_idx = (self._player_idx - 1) % 2
-        self._ui.set_player_idx(self._player_idx)
-        print(f'This client got player number: {self._player_idx}.')
 
     def _process_msg(self, msg):
         if msg == 'ping request answer':

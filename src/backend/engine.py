@@ -126,7 +126,8 @@ class Engine:
         return np.array(self._kinds, dtype='float64')
 
     def _update(self):
-        #self._pos += self._vel
+        if conf.ant_movement:
+            self._pos += self._vel
         self._collisions()
         self._correct_to_boundaries()
         self._update_animations()
