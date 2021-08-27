@@ -13,6 +13,15 @@ def get_output_dir_path():
     return dir_path
 
 
+def create_parallel_game_folder():
+    dir_path = get_output_dir_path()
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+    parallel_record_folder = f'{dir_path}/gs_{datetime.now().strftime(conf.date_format)}'
+    os.makedirs(parallel_record_folder)
+    return parallel_record_folder
+
+
 def new_file():
     dir_path = get_output_dir_path()
     now = datetime.now()
@@ -28,10 +37,12 @@ def new_file():
     atom = tables.Float64Atom()
 
     enlargeable_array_shape = (0, *conf.packet_shape)
+    print(enlargeable_array_shape)
     file.create_earray(file.root, 'data', atom, enlargeable_array_shape)  # TODO use name for storing different games
 
 
 def deposit(game_state):
+    print(game_state[None, :].shape)
     file.root.data.append(game_state[None, :])
 
 
@@ -41,4 +52,28 @@ def close():
         file.close()
         file = None
         os.remove(path)  # Remove invalid game record
+
+
+class Depositor:
+    def __init__(self, output_folder, identifier):
+        self._file = None
+        self._path = ''
+        self._new_file(output_folder, identifier)
+
+    def deposit(self, game_state):
+        self._file.root.data.append(game_state[None, :])
+
+    def close(self):
+        if self._file is not None:
+            self._file.close()
+            self._file = None
+            os.remove(self._path)  # Remove invalid game record
+
+    def _new_file(self, output_path, identifier):
+        self._path = f'{output_path}/{identifier}.h5'
+        os.mknod(self._path)
+        self._file = tables.open_file(self._path, mode='w')
+        atom = tables.Float64Atom()
+        enlargeable_array_shape = (0, *conf.packet_shape)
+        self._file.create_earray(self._file.root, 'data', atom, enlargeable_array_shape)
 

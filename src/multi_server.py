@@ -47,7 +47,7 @@ class MultiServer(DatagramProtocol):
     def _msg_to_all(self, msg):
         msg = pickle.dumps(msg)
         if self._game_manager.fully_staffed():
-            for address in self._game_manager.get_all_addresses():
+            for address in self._game_manager.addresses:
                 self.transport.write(msg, address)
 
     def _run_reactor(self, **kwargs):

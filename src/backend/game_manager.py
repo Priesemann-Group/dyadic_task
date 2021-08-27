@@ -1,17 +1,22 @@
 import configuration.conf as conf
 from backend.engine import Engine
+from backend.data_depositor import Depositor
+from backend import data_depositor
 import time, numpy
 
 
 class GameManager:
     class Game:  # contains data of player 0 and 1 for one game
-        def __init__(self):
-            self._addresses = [None, None]
+        def __init__(self, output_folder, addresses, lap, p0_idx, p1_idx):
+            self._addresses = addresses
             self._last_contact_times = [-1., -1.]
             self._positions = [(-1000, 0), (-1000, 0)]
             self._pings = [-1., -1.]
             self._scale_factors = [-1., -1.]
+            self._identifier = str(lap * 100 + p0_idx * 10 + p1_idx).zfill(3)
             self._engine = Engine()
+            self._depositor = Depositor(output_folder, self._identifier)
+            self._engine.spawn_ants()  # TODO Move into engine constructor
 
         def set_values(self, packet, address):
             player_idx = 0
@@ -27,12 +32,13 @@ class GameManager:
             game_state = self._engine.produce_next_game_state(self._positions)
             game_state[0, 3] = self._pings[0]
             game_state[1, 3] = self._pings[1]
-            info_header = numpy.array([*self.scale_factors, time.time(), 0])  # last value is unused
+            info_header = numpy.array([*self.scale_factors, time.time(), float(int(self._identifier))])
             game_state = numpy.vstack((info_header, game_state))
+            self._depositor.deposit(game_state)
             return game_state
 
-        def start_engine(self):
-            self._engine.spawn_ants()
+        #def set_identifier(self, lap, client_0_idx, client_1_idx):
+        #    self._identifier = lap * 100 + client_0_idx * 10 + client_1_idx
 
         @property
         def addresses(self):
@@ -46,6 +52,10 @@ class GameManager:
         def last_contact_times(self):
             return self._last_contact_times
 
+        @property
+        def identifier(self):
+            return self._identifier
+
         @addresses.setter
         def addresses(self, value):
             self._addresses = value
@@ -53,8 +63,7 @@ class GameManager:
     def __init__(self):
         self._games = []
         self._addresses = []
-        for _ in range(conf.simultaneous_games):
-            self._games.append(self.Game())
+        self._lap = 0  # TODO
 
     def consume_packet(self, packet, address):
         for game in self._games:
@@ -66,11 +75,10 @@ class GameManager:
         if address not in self._addresses:
             self._addresses.append(address)
         if self.fully_staffed():
-            self._parse_addresses_and_start()
+            self._start_games()
             # pass  # TODO start rounds if all ready
 
     def fully_staffed(self):
-        print(f'fully_stafed called :{len(self._addresses) == 2 * conf.simultaneous_games}')
         return len(self._addresses) == 2 * conf.simultaneous_games
 
     def get_next_game_states(self):
@@ -81,12 +89,6 @@ class GameManager:
             target_addresses.append(game.addresses)
         return game_states, target_addresses
 
-    def get_all_addresses(self):
-        addresses = []
-        for game in self._games:
-            addresses = addresses + game.addresses
-        return addresses
-
     def all_players_connected(self):
         t = time.time()
         for game in self._games:
@@ -95,10 +97,17 @@ class GameManager:
                     return False
         return True
 
-    def _parse_addresses_and_start(self):
-        i = 1
-        for game in self._games:
-            game.addresses = [self._addresses[i-1], self._addresses[i]]
-            game.start_engine()
-            i += 2
-        print(f'should not be empty: {self._addresses}')
+    def _start_games(self):
+        output_folder = data_depositor.create_parallel_game_folder()
+        for i in range(1, 2 * conf.simultaneous_games, 2):
+            print(f'start_game loop {i}')
+            self._games.append(self.Game(output_folder=output_folder,
+                                         addresses=[self._addresses[i-1], self._addresses[i]],
+                                         lap=self._lap,
+                                         p0_idx=i-1,
+                                         p1_idx=i))
+
+    @property
+    def addresses(self):
+        return self._addresses
+
