@@ -72,6 +72,7 @@ _cols = 4  # For x, y, rad, share values for each ant
 packet_shape = (_rows, _cols)
 
 simultaneous_games = 2
+laps_to_play = 2
 
 # For sprite creation
 ant_img_size = 256

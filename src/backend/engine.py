@@ -14,11 +14,7 @@ class Engine:
         self._vel = np.full((conf.ant_amount, 2), np.nan, dtype='float64')
         self._kinds = []
 
-        # call njit compiler
-        _euclid_dist(np.zeros(2))
-        _collision_calc(self._pos)
-
-        self.spawn_ants()
+        self._spawn_ants()
 
         self._score = [0, 0]
         self._score_state = [np.nan, np.nan]
@@ -39,7 +35,7 @@ class Engine:
         game_state = np.vstack((player_header, score_header, game_state))
         return game_state
 
-    def spawn_ants(self):
+    def _spawn_ants(self):
         self._score = [0, 0]
         self._pos = np.full((conf.ant_amount, 2), np.nan, dtype='float64')
         self._vel = np.full((conf.ant_amount, 2), np.nan, dtype='float64')
@@ -214,3 +210,9 @@ def _collision_calc(pos):
                     collisions[coll_count] = np.array([i, k])
                     coll_count += 1
     return list(collisions)
+
+
+# call njit compiler
+_euclid_dist(np.zeros(2))
+_collision_calc(np.full((conf.ant_amount, 2), np.nan, dtype='float64'))
+

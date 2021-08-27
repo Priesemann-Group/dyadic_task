@@ -1,7 +1,6 @@
 from pyglet.window import key
 from pyglet import clock
 from configuration import conf
-import numpy
 
 
 class WasdController:

@@ -6,7 +6,7 @@ from twisted.internet import reactor
 from configuration import conf
 from backend import data_depositor
 from backend.engine import Engine
-from backend.game_scheduler import GameScheduler
+from backend.scheduler import GameScheduler
 
 from threading import Thread
 
