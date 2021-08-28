@@ -12,7 +12,10 @@ cooperative_reward = 10
 
 pos_updates_ps = 60
 #lap_time = 20  # for mouse control
-lap_time = 60
+lap_time = 10
+simultaneous_games = 1
+laps_to_play = 1
+
 update_amount = pos_updates_ps * lap_time
 
 # Control
@@ -70,9 +73,6 @@ date_format = '%d-%m-%y_%H-%M-%S'
 _rows = ant_amount + 4  # For the 4 headers
 _cols = 4  # For x, y, rad, share values for each ant
 packet_shape = (_rows, _cols)
-
-simultaneous_games = 2
-laps_to_play = 2
 
 # For sprite creation
 ant_img_size = 256

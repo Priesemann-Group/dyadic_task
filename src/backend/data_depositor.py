@@ -62,7 +62,7 @@ def new_file():
 
     enlargeable_array_shape = (0, *conf.packet_shape)
     print(enlargeable_array_shape)
-    file.create_earray(file.root, 'data', atom, enlargeable_array_shape)  # TODO use name for storing different games
+    file.create_earray(file.root, 'data', atom, enlargeable_array_shape)
 
 
 def deposit(game_state):

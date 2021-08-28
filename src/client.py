@@ -68,7 +68,9 @@ class UdpClient(DatagramProtocol):
         if msg == 'ping request answer':
             self._ping = (time.time() - self._ping_request_start) * 1000  # in milliseconds
             self._ping_request_start = -1.
-        elif msg == 'Server is full.' or msg == 'Timeout due to inactivity.':
+        elif msg == 'Server is full.' \
+                or msg == 'Timeout due to inactivity.' \
+                or msg == 'Recording session ended successfully':
             print(msg)
             self._close()
 
@@ -104,7 +106,7 @@ class UdpClient(DatagramProtocol):
         return self._rec_packets.get()
 
     def _close(self):
-        self._ui.close_window()
+        self._ui.close_ui()
         if reactor.running:
             reactor.stop()
 

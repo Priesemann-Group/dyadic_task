@@ -39,8 +39,8 @@ class LapCoordinator:
 
     def all_players_connected(self):
         t = time.time()
-        for game in self._matches:
-            for last_contact in game.last_contact_times:
+        for match in self._matches:
+            for last_contact in match.last_contact_times:
                 if last_contact > 0. and t - last_contact > conf.time_until_disconnect:
                     return False
         return True
@@ -49,7 +49,7 @@ class LapCoordinator:
         output_folder = data_depositor.create_parallel_game_folder()
         for lap, lc in enumerate(lap_constellations()):
             if lap >= conf.laps_to_play:
-                return  # TODO proper ending
+                break
             for p0_idx, p1_idx in lc:
                 self._matches.append(Match(output_folder=output_folder,
                                            addresses=[self._addresses[p0_idx], self._addresses[p1_idx]],
@@ -58,6 +58,7 @@ class LapCoordinator:
                                            p1_idx=p1_idx))
             self._run_lap()
             self._matches = []
+        self._send_msg(b'Recording session ended successfully')
 
     def _run_lap(self):
         scheduler = Scheduler(time.time, time.sleep)

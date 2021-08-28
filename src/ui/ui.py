@@ -5,6 +5,7 @@ import numpy as np
 from configuration import conf as c
 from pyglet.shapes import Circle
 from pyglet.graphics import Batch, OrderedGroup
+from pyglet import app
 from ui.sounds import OccupationSoundPlayer
 from ui.elements import TargetIndicator, Pointer, PopUpLabel, Ant
 from ui.window import ScaleFieldWindow
@@ -76,8 +77,9 @@ class UI:
     def get_scale_factor(self):
         return self._win.get_scale_factor()
 
-    def close_window(self):
-        self._win.close()
+    def close_ui(self):
+        app.exit()
+        self.on_close()
 
     def on_close(self):
         if self._on_close_func is not None:

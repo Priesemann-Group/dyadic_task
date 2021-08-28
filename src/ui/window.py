@@ -30,9 +30,6 @@ class ScaleFieldWindow:
         self.event(self.on_resize)
         self.event(self.on_key_release)
 
-    def close(self):
-        self._window.close()
-
     def get_scale_factor(self):
         return self._scale_factor
 

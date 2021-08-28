@@ -10,13 +10,17 @@ class MultiServer(DatagramProtocol):
     def __init__(self):
         self._lap_coordinator = LapCoordinator(send_pkg=self._send_packet,
                                                send_msg=self._msg_to_all)
+        self._ended = False
         reactor.listenUDP(conf.server_port, self)
         Thread(target=self._run_reactor,
                kwargs={"installSignalHandlers": False}).start()
-        self._lap_coordinator.start()
+        self._lap_coordinator.start()  # blocking until everything is recoded
+        self._ended = True
+        print('Recording was successful')
 
     def startProtocol(self):
         reactor.callLater(.5, self._check_player_contact)
+        reactor.callLater(1, self._end_from_server_thread)
 
     def datagramReceived(self, data, address):
         packet = pickle.loads(data)
@@ -51,6 +55,13 @@ class MultiServer(DatagramProtocol):
         if not self._lap_coordinator.all_players_connected():
             print('INVALID RECORD: PLAYER TIMED OUT')
         reactor.callLater(.5, self._check_player_contact)
+
+    def _end_from_server_thread(self):
+        if self._ended:
+            if reactor.running:
+                reactor.stop()
+        else:
+            reactor.callLater(1, self._end_from_server_thread)
 
 
 MultiServer()
