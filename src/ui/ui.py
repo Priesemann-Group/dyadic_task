@@ -9,13 +9,16 @@ from pyglet import app
 from ui.sounds import OccupationSoundPlayer
 from ui.elements import TargetIndicator, Pointer, PopUpLabel, Ant
 from ui.window import ScaleFieldWindow
-from ui.wasd_controller import WasdController
+from ui.wasd_controller import WasdController, KeyController
 
 
 class UI:
-    def __init__(self, debug_overlay, on_motion, on_close, wasd_ctrl=False):
-        self._on_motion_func = on_motion
+    def __init__(self, debug_overlay, on_motion, on_close, on_player_ready, wasd_ctrl=False):
+        self._on_motion_func = None
+        self._player_ready = False
+        self._set_on_motion_func(on_motion)
         self._on_close_func = on_close
+        self._on_player_ready = on_player_ready
 
         self._bg_group = OrderedGroup(0)
         self._ant_group = OrderedGroup(1)
@@ -43,9 +46,12 @@ class UI:
         self._win.event(self.on_close)
         self._win.event(self.on_draw)
         if wasd_ctrl:
-            self._wasd_controller = WasdController(event_decorator=self._win.event,
-                                                   on_motion=on_motion)
+            self._input_controller = WasdController(event_decorator=self._win.event,
+                                                    on_motion=self._on_motion_func,
+                                                    on_space_pressed=self._set_ready)
         else:
+            self._input_controller = KeyController(event_decorator=self._win.event,
+                                                   on_space_pressed=self._set_ready)
             self._win.event(self.on_mouse_motion)
 
     def set_values(self, pings, player_0_pos, player_1_pos, target_states,
@@ -90,12 +96,17 @@ class UI:
         self._batch.draw()
 
     def on_mouse_motion(self, x, y, dx, dy):  # Calls clients function to send position to server
-        if self._on_motion_func is not None:
+        if self._on_motion_func is not None and self._player_ready:
             self._on_motion_func(tuple(self._win.to_win_coordinates((x, y), reverse=True)))
 
     def set_player_idx(self, player_idx):
         self._player_idx = player_idx
         self._win.set_player_idx(player_idx)
+
+    def _set_ready(self):
+        self._player_ready = True
+        self._on_player_ready()
+        self._win.set_countdown('Waiting for other participants...')
 
     def _init_ui_elements(self):
         for i in [0, 1]:
@@ -114,6 +125,12 @@ class UI:
                                                        group=player_group,
                                                        batch=self._batch))
             self._occupation_sound_player.append(OccupationSoundPlayer(c.player_volumes[i]))
+
+    def _set_on_motion_func(self, on_motion):
+        def on_m(*arg):
+            if self._player_ready:
+                on_motion(*arg)
+        self._on_motion_func = on_m
 
     def _generate_ants(self):
         ants = []

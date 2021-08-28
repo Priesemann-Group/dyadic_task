@@ -29,6 +29,7 @@ class ScaleFieldWindow:
                                Rectangle(0, 0, 1, 1, color=conf.margin_color, batch=batch, group=fg_group)]
         self.event(self.on_resize)
         self.event(self.on_key_release)
+        self.set_countdown('Press space to connect!')
 
     def get_scale_factor(self):
         return self._scale_factor
@@ -38,6 +39,7 @@ class ScaleFieldWindow:
             self._debug_labels._player_number = player_idx
 
     def on_key_release(self, symbol, modifiers):
+        print(symbol)
         if symbol == 102:  # 102 == symbol for 'f'
             self._window.set_fullscreen(fullscreen=not self._window.fullscreen)
 
@@ -64,6 +66,9 @@ class ScaleFieldWindow:
         self._countdown_label.draw()
 
     def set_countdown(self, num):
+        if isinstance(num, str):
+            self._countdown_label.color = conf.font_color
+            self._countdown_label.text = num
         if num == 0:
             self._countdown_label.color = (0, 0, 0, 0)
         else:
@@ -144,9 +149,11 @@ class ScaleFieldWindow:
 
         if self._debug_overlay:
             self._debug_labels.replace_labels(origin=self._origin,
-                                              field_height=self._background.height)
+                                              field_height=self._background.height,
+                                              scale_factor=self._scale_factor)
         self._countdown_label.x = self._origin[0] + self._background.width // 2
         self._countdown_label.y = self._origin[1] + self._background.height // 2
+        self._countdown_label.font_size = conf.countdown_font_size * self._scale_factor
 
     class ScoreChart(Rectangle):
         def __init__(self, batch, fg_group, bg_group):
@@ -200,18 +207,20 @@ class ScaleFieldWindow:
                                   Label(**label_kwargs)]
             self._player_number = -1
 
-        def replace_labels(self, origin, field_height):
+        def replace_labels(self, origin, field_height, scale_factor):
+            font_size = scale_factor * conf.font_size
             self._fps_label.x = origin[0]
-            self._fps_label.y = origin[1] + field_height - conf.font_size
+            self._fps_label.y = origin[1] + field_height - font_size
             for i, label in enumerate(self._ping_labels):
                 label.x = origin[0]
-                label.y = origin[1] + field_height - (2 + i) * conf.font_size
+                label.y = origin[1] + field_height - (2 + i) * font_size
             self._player_number_label.x = origin[0]
-            self._player_number_label.y = origin[1] + 2 * conf.font_size
+            self._player_number_label.y = origin[1] + 2 * font_size
             for label in self._score_labels:
                 label.x = origin[0]
                 label.y = origin[1]
-            self._score_labels[0].y += conf.font_size
+            self._score_labels[0].y += font_size
+            self._set_font_sizes(font_size)
 
         def draw(self):
             self._fps_label.text = f'FPS: {int(clock.get_fps())}'
@@ -219,3 +228,11 @@ class ScaleFieldWindow:
             for i in range(len(self._ping_labels)):
                 self._ping_labels[i].text = f'Ping Player {i + 1}: {self._player_pings[i]}'
                 self._score_labels[i].text = f'Score Player {i + 1}: {self._scores[i]}'
+
+        def _set_font_sizes(self, font_size):
+            self._fps_label.font_size = font_size
+            self._player_number_label.font_size = font_size
+            for i in [0, 1]:
+                self._ping_labels[i].font_size = font_size
+                self._score_labels[i].font_size = font_size
+

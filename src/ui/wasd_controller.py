@@ -3,8 +3,20 @@ from pyglet import clock
 from configuration import conf
 
 
-class WasdController:
-    def __init__(self, event_decorator, on_motion):
+class KeyController:
+    def __init__(self, event_decorator, on_space_pressed):
+        self._on_space_pressed = on_space_pressed
+        event_decorator(self.on_key_press)
+
+    def on_key_press(self, symbol, modifiers):
+        if symbol == key.SPACE:
+            print('Space pressed')
+            self._on_space_pressed()
+
+
+class WasdController(KeyController):
+    def __init__(self, event_decorator, on_motion, on_space_pressed):
+        super().__init__(event_decorator, on_space_pressed)
         self._w_pressed = False
         self._a_pressed = False
         self._s_pressed = False
@@ -60,6 +72,7 @@ class WasdController:
             self._y = conf.field_size[1]
 
     def on_key_press(self, symbol, modifiers):
+        super().on_key_press(symbol, modifiers)
         if symbol == key.W:
             self._w_pressed = True
         elif symbol == key.A:

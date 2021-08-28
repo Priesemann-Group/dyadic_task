@@ -21,6 +21,7 @@ class UdpClient(DatagramProtocol):
         self._rec_packets = Queue()
         self._end_reactor_thread = False
         self._next_round_start = -1.
+        self._communication_started = False
 
         if 'dyadic' in sys.argv:
             conf.background_color = conf.dyadic_background_color
@@ -34,14 +35,15 @@ class UdpClient(DatagramProtocol):
         self._ui = UI(debug_overlay='debug' in sys.argv,
                       on_motion=self._send_pos,
                       on_close=self._close_from_ui_thread,
+                      on_player_ready=self._start_communication,
                       wasd_ctrl='keyboard' in sys.argv)
 
-        reactor.listenUDP(0, self)
-        Thread(target=reactor.run,
-               kwargs={"installSignalHandlers": False}).start()
+        #reactor.listenUDP(0, self)
+        #Thread(target=reactor.run,
+        #       kwargs={"installSignalHandlers": False}).start()
 
-        clock.schedule_interval(self._consume_packet, 2 ** -8)
-        clock.schedule_interval(self._request_ping, .5)
+        #clock.schedule_interval(self._consume_packet, 2 ** -8)
+        #clock.schedule_interval(self._request_ping, .5)
         app.run()
 
     def startProtocol(self):
@@ -64,6 +66,16 @@ class UdpClient(DatagramProtocol):
         elif isinstance(packet, float):
             self._next_round_start = packet
 
+    def _start_communication(self):
+        if not self._communication_started:
+            self._communication_started = True
+            reactor.listenUDP(0, self)
+            Thread(target=reactor.run,
+                   kwargs={"installSignalHandlers": False}).start()
+            clock.schedule_interval(self._consume_packet, 2 ** -8)
+            clock.schedule_interval(self._request_ping, .5)
+            print('communication started')
+
     def _process_msg(self, msg):
         if msg == 'ping request answer':
             self._ping = (time.time() - self._ping_request_start) * 1000  # in milliseconds
@@ -85,6 +97,7 @@ class UdpClient(DatagramProtocol):
         reactor.callLater(.2, self._check_if_ui_exits)
 
     def _send_pos(self, pos):
+        #print(1)
         self._send((*pos, int(self._ping), self._ui.get_scale_factor()))
 
     def _request_ping(self, dx):
@@ -96,7 +109,7 @@ class UdpClient(DatagramProtocol):
             self.transport.write(pickle.dumps(packet))
         else:
             print('No connection to server.')
-            self._close()
+            #self._close()
 
     def _get_newest_packet(self):
         if self._rec_packets.qsize() > 1:
