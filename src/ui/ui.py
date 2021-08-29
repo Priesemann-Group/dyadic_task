@@ -7,13 +7,13 @@ from pyglet.shapes import Circle
 from pyglet.graphics import Batch, OrderedGroup
 from pyglet import app
 from ui.sounds import OccupationSoundPlayer
-from ui.elements import TargetIndicator, Pointer, PopUpLabel, Ant
+from ui.elements import TargetIndicator, Pointer, PopUpLabel, Ant, Curtain
 from ui.window import ScaleFieldWindow
 from ui.wasd_controller import WasdController, KeyController
 
 
 class UI:
-    def __init__(self, debug_overlay, on_motion, on_close, on_player_ready, wasd_ctrl=False):
+    def __init__(self, debug_overlay, on_motion, on_close, on_player_ready, replay=False, wasd_ctrl=False):
         self._on_motion_func = None
         self._player_ready = False
         self._set_on_motion_func(on_motion)
@@ -30,9 +30,11 @@ class UI:
                                      bg_group=self._bg_group,
                                      fg_group=self._fg_group,
                                      debug_overlay=debug_overlay,
+                                     replay_mode=replay,
                                      resizable=True, vsync=False)
 
         # Ui elements
+        #self._curtain = Curtain(self._batch, self._bg_group)
         self._player_circles = []
         self._target_indicators = []
         self._score_popup_labels = []
@@ -105,8 +107,11 @@ class UI:
 
     def _set_ready(self):
         self._player_ready = True
-        self._on_player_ready()
-        self._win.set_countdown('Waiting for other participants...')
+        if self._on_player_ready is not None:
+            self._on_player_ready()
+        self._win.hide_curtain()
+        #self._win.set_countdown('Waiting for other participants...')
+        #self._curtain.hide()
 
     def _init_ui_elements(self):
         for i in [0, 1]:

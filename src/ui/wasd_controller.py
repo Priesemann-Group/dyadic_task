@@ -10,7 +10,6 @@ class KeyController:
 
     def on_key_press(self, symbol, modifiers):
         if symbol == key.SPACE:
-            print('Space pressed')
             self._on_space_pressed()
 
 

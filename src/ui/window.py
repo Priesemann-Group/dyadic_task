@@ -3,13 +3,15 @@ from pyglet.shapes import Rectangle
 from pyglet.text import Label
 from pyglet import clock
 from configuration import conf
+from ui.elements import Curtain
 import numpy
 
 
 class ScaleFieldWindow:
-    def __init__(self, batch, bg_group, fg_group, debug_overlay=False, *args, **kwargs):
+    def __init__(self, batch, bg_group, fg_group, debug_overlay=False, replay_mode=False, *args, **kwargs):
         self._window = Window(*args, **kwargs)  # Wrapper because window is abstract
         self._debug_overlay = debug_overlay
+        self._replay_mode = replay_mode
         if self._debug_overlay:
             self._debug_labels = self.DebugLabels(batch, fg_group)
         self._countdown_label = Label(x=0, y=0,
@@ -24,12 +26,14 @@ class ScaleFieldWindow:
         self._client_field_size = None
         self._origin = [0, 0]
         self._background = Rectangle(0, 0, 0, 0, color=conf.background_color, batch=batch, group=bg_group)
+        if not self._replay_mode:
+            self._curtain = Curtain(batch, fg_group)
         self._score_chart = self.ScoreChart(batch=batch, fg_group=fg_group, bg_group=bg_group)
         self._black_margins = [Rectangle(0, 0, 1, 1, color=conf.margin_color, batch=batch, group=fg_group),
                                Rectangle(0, 0, 1, 1, color=conf.margin_color, batch=batch, group=fg_group)]
         self.event(self.on_resize)
         self.event(self.on_key_release)
-        self.set_countdown('Press space to connect!')
+        #self.set_countdown('Press space to connect!')
 
     def get_scale_factor(self):
         return self._scale_factor
@@ -64,6 +68,11 @@ class ScaleFieldWindow:
         if self._debug_overlay:
             self._debug_labels.draw()
         self._countdown_label.draw()
+
+    def hide_curtain(self):
+        if not self._replay_mode:
+            self.set_countdown('Waiting for other participants...')
+            self._curtain.hide()
 
     def set_countdown(self, num):
         if isinstance(num, str):
@@ -146,6 +155,9 @@ class ScaleFieldWindow:
             self._origin[0] += self._score_chart.width
 
         self._background.position = tuple(self._origin)
+        if not self._replay_mode:
+            self._curtain.position = self._score_chart.position
+            self._curtain.scale = self._scale_factor
 
         if self._debug_overlay:
             self._debug_labels.replace_labels(origin=self._origin,

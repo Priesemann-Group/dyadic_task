@@ -126,3 +126,13 @@ class PopUpLabel(Label):
     def hide(self):
         self.x = -1000
 
+
+class Curtain(Sprite):
+    def __init__(self, batch, group):
+        super().__init__(img=image.load(paths.curtain_path), batch=batch, group=group)
+
+    def hide(self):
+        #self.x = -10000
+        self.visible = False
+
+

@@ -22,6 +22,7 @@ class UdpClient(DatagramProtocol):
         self._end_reactor_thread = False
         self._next_round_start = -1.
         self._communication_started = False
+        self._closed = False
 
         if 'dyadic' in sys.argv:
             conf.background_color = conf.dyadic_background_color
@@ -97,7 +98,6 @@ class UdpClient(DatagramProtocol):
         reactor.callLater(.2, self._check_if_ui_exits)
 
     def _send_pos(self, pos):
-        #print(1)
         self._send((*pos, int(self._ping), self._ui.get_scale_factor()))
 
     def _request_ping(self, dx):
@@ -109,7 +109,7 @@ class UdpClient(DatagramProtocol):
             self.transport.write(pickle.dumps(packet))
         else:
             print('No connection to server.')
-            #self._close()
+            self._close()
 
     def _get_newest_packet(self):
         if self._rec_packets.qsize() > 1:
@@ -119,9 +119,11 @@ class UdpClient(DatagramProtocol):
         return self._rec_packets.get()
 
     def _close(self):
-        self._ui.close_ui()
-        if reactor.running:
-            reactor.stop()
+        if not self._closed:
+            self._closed = True
+            self._ui.close_ui()
+            if reactor.running:
+                reactor.stop()
 
     def _close_from_ui_thread(self):
         self._end_reactor_thread = True

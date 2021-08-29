@@ -9,7 +9,9 @@ class Replay:
     def __init__(self):
         self._ui = UI(debug_overlay='debug' in sys.argv,
                       on_motion=None,
-                      on_close=None)
+                      on_close=None,
+                      on_player_ready=None,
+                      replay=True)
         self._current_frame = 0
         file = tables.open_file(sys.argv[1], mode='r')
         self._record = file.root.data
