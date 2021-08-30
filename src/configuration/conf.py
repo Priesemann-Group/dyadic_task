@@ -13,8 +13,8 @@ cooperative_reward = 10
 pos_updates_ps = 60
 #lap_time = 20  # for mouse control
 lap_time = 10
-simultaneous_games = 1
-laps_to_play = 1
+simultaneous_games = 2
+laps_to_play = 3
 
 update_amount = pos_updates_ps * lap_time
 
