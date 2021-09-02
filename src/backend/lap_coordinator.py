@@ -28,6 +28,7 @@ class LapCoordinator:
     def register_player(self, address):
         if address not in self._addresses:
             self._addresses.append(address)
+            print(f'registered address {address}, got player index: {len(self._addresses)-1}')
 
     def send_next_game_states(self):
         game_states = []

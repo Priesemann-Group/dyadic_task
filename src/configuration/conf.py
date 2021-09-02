@@ -9,11 +9,12 @@ time_to_occupy = .5
 occupied_animation_time = .3  # should be < time_to_occupy
 ant_movement = True
 
-time_before_round = 2
+#time_before_round = 2
+time_before_round = 5
 
 pos_updates_ps = 60
 #lap_time = 20  # for mouse control
-lap_time = 10
+lap_time = 5 * 60
 simultaneous_games = 2
 laps_to_play = 3
 
