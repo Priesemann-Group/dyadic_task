@@ -1,14 +1,15 @@
 # Game config
 ant_amount = 6
 ant_radius = 50
-velocity = 3
+#velocity = 3
+#velocity = 2
+velocity = 1.5
 time_to_occupy = .5
+#time_to_occupy = 1
 occupied_animation_time = .3  # should be < time_to_occupy
 ant_movement = True
 
 time_before_round = 2
-competitive_reward = 1
-cooperative_reward = 10
 
 pos_updates_ps = 60
 #lap_time = 20  # for mouse control
@@ -21,7 +22,8 @@ update_amount = pos_updates_ps * lap_time
 # Control
 # WASD Control
 #wasd_speed = 8  # for moving dots
-wasd_speed = 16
+#wasd_speed = 16
+wasd_speed = 10
 wasd_diag_speed = wasd_speed/int((wasd_speed**2+wasd_speed**2)**.5)*wasd_speed
 wasd_update_rate = 1/60
 
@@ -30,7 +32,8 @@ font_name = 'Arial'
 font_size = 20
 countdown_font_size = 64
 popup_font_size = 42
-score_chart_max_score = 1./time_to_occupy * lap_time * 8 * 1/3  # 8 is the average reward for cooperation, 1/3 is random
+#score_chart_max_score = 1./time_to_occupy * lap_time * 8 * 1/2  # 8 is the average reward for cooperation, 1/3 is random
+score_chart_max_score = 1./time_to_occupy * lap_time * 8 #* 1/3  # 8 is the average reward for cooperation, 1/3 is random
 player_radius = 10
 target_opacity = 255
 popup_height = 64

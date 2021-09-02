@@ -12,6 +12,8 @@ class Match:  # contains data of player 0 and 1 for one game
         self._pings = [-1., -1.]
         self._scale_factors = [-1., -1.]
         self._identifier = str(lap * 100 + p0_idx * 10 + p1_idx).zfill(3)
+        self._p0_idx = p0_idx
+        self._p1_idx = p1_idx
         self._engine = Engine()
         self._depositor = Depositor(output_folder, self._identifier)
 
@@ -33,6 +35,17 @@ class Match:  # contains data of player 0 and 1 for one game
         game_state = numpy.vstack((info_header, game_state))
         self._depositor.deposit(game_state)
         return game_state
+
+    def get_score(self):
+        return self._engine.score
+
+    @property
+    def p0_idx(self):
+        return self._p0_idx
+
+    @property
+    def p1_idx(self):
+        return self._p1_idx
 
     @property
     def addresses(self):

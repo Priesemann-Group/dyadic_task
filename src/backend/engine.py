@@ -35,6 +35,10 @@ class Engine:
         game_state = np.vstack((player_header, score_header, game_state))
         return game_state
 
+    @property
+    def score(self):
+        return self._score
+
     def _spawn_ants(self):
         self._score = [0, 0]
         self._pos = np.full((conf.ant_amount, 2), np.nan, dtype='float64')
