@@ -36,8 +36,9 @@ def draw_shared_circ(fraction,
     start = frac_to_deg(0)
     end = frac_to_deg(fraction)
     global name_index
-    draw.ellipse((0, 0, conf.ant_img_size, conf.ant_img_size),
-                 fill=col_border),
+    #draw.ellipse((0, 0, conf.ant_img_size, conf.ant_img_size),
+    #             fill=col_border),
+    margin = 0
     draw.ellipse((margin, margin, conf.ant_img_size - margin, conf.ant_img_size - margin),
                  fill=col_1),
     draw.pieslice((margin, margin, conf.ant_img_size - margin, conf.ant_img_size - margin),
@@ -76,20 +77,25 @@ for i in range(5, 8):
                      col_border=conf.dyadic_border_black,
                      img_folder=paths.dyadic_image_folder)
 
-for i in [0, 1]:  # Create target indicators
-    draw.ellipse((0, 0, conf.ant_img_size, conf.ant_img_size),
-                 fill=conf.player_colors[i])
-    draw.ellipse((margin/2, margin/2, conf.ant_img_size - margin/2, conf.ant_img_size - margin/2),
-                 fill=conf.border_black)
-    draw.ellipse((margin, margin, conf.ant_img_size - margin, conf.ant_img_size - margin),
-                 fill=0)
-    im.save(output_folder_path + f'/{paths.image_folder}target_indicator_{i}.png', quality=100)
 
-for i in [0, 1]:  # Create target indicators
-    draw.ellipse((0, 0, conf.ant_img_size, conf.ant_img_size),
-                 fill=conf.player_colors[i])
-    draw.ellipse((margin/2, margin/2, conf.ant_img_size - margin/2, conf.ant_img_size - margin/2),
-                 fill=conf.dyadic_border_black)
-    draw.ellipse((margin, margin, conf.ant_img_size - margin, conf.ant_img_size - margin),
-                 fill=0)
-    im.save(output_folder_path + f'/{paths.dyadic_image_folder}target_indicator_{i}.png', quality=100)
+def create_target_indicators(black=conf.border_black, folder=paths.image_folder):
+    for i in [0, 1]:  # Create target indicators
+        draw.ellipse((0, 0, conf.ant_img_size, conf.ant_img_size),
+                     fill=conf.player_colors[i])
+        #draw.ellipse((margin/2, margin/2, conf.ant_img_size - margin/2, conf.ant_img_size - margin/2),
+        #             fill=black)
+        draw.ellipse((margin, margin, conf.ant_img_size - margin, conf.ant_img_size - margin),
+                     fill=0)
+        im.save(output_folder_path + f'/{folder}target_indicator_{i}.png', quality=100)
+
+
+create_target_indicators()
+create_target_indicators(black=conf.dyadic_border_black, folder=paths.dyadic_image_folder)
+
+predictor_size = conf.ant_img_size + 32
+im = Image.new('RGBA', (predictor_size+1, predictor_size+1), (0, 0, 0, 0))
+draw = ImageDraw.Draw(im)
+
+draw.ellipse((0, 0, predictor_size, predictor_size), fill=conf.prediction_color)
+draw.ellipse((margin, margin, predictor_size - margin, predictor_size - margin), fill=0)
+im.save(output_folder_path + f'/{paths.image_folder}target_indicator_2.png', quality=100)

@@ -35,7 +35,7 @@ class TargetIndicator(Circle):
         self.x = -1000
         self._target_sprite.x = -1000
 
-    def _get_sprite(self, player_idx):
+    def _get_sprite(self, player_idx):  # player_idx = 2 is for predictor
         img = image.load(f'{paths.target_indicator_prefix}{player_idx}.png')
         img.anchor_x = img.width // 2
         img.anchor_y = img.height // 2

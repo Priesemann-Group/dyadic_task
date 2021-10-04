@@ -43,6 +43,7 @@ class Engine:
         self._score = [0, 0]
         self._pos = np.full((conf.ant_amount, 2), np.nan, dtype='float64')
         self._vel = np.full((conf.ant_amount, 2), np.nan, dtype='float64')
+        # idx 0,1 coop_p1, idx 2,3 coop_p0, idx 4,5 comp
         self._kinds = [0, 0, 3, 3, 6, 6]  # will be overridden
         for i in range(conf.ant_amount):
             self._replace_ant(i)
@@ -53,7 +54,7 @@ class Engine:
         for player_idx, mouse_pos in enumerate(mouse_positions):
             mouse_pos = np.array(mouse_pos)
             if self._target_idx[player_idx] != -1:  # mouse was on a target
-                dist = _euclid_dist(self._pos[self._target_idx[player_idx]] - mouse_pos)
+                dist = euclid_dist(self._pos[self._target_idx[player_idx]] - mouse_pos)
                 if dist < conf.ant_radius:  # mouse is still on the target
                     t = time.time()
                     if t > self._target_occupation_date[player_idx]:  # occupied the target
@@ -115,7 +116,7 @@ class Engine:
 
     def _check_for_target(self, i, mouse_pos):
         for k, p in enumerate(self._pos):
-            dist = _euclid_dist(p - mouse_pos)
+            dist = euclid_dist(p - mouse_pos)
             is_shared = ant_kind.is_shared(self._kinds[k])
             is_occupied_by_opponent = self._target_idx[(i - 1) % 2] == k
             if dist < conf.ant_radius and (is_shared or not is_occupied_by_opponent):
@@ -171,7 +172,7 @@ class Engine:
 
     def _collision_next_iter(self, i, k):
         diff = (self._pos[i] - self._vel[i]) - (self._pos[k] - self._vel[k])
-        return _euclid_dist(diff) < 2 * conf.ant_radius
+        return euclid_dist(diff) < 2 * conf.ant_radius
 
     def _replace_ant(self, ant_idx):
         angle = random.uniform(0., np.pi * 2)
@@ -186,7 +187,7 @@ class Engine:
             valid = True
             for i in range(conf.ant_amount):
                 if not np.isnan(self._pos[i][0]):
-                    dist = _euclid_dist(self._pos[i] - pos)
+                    dist = euclid_dist(self._pos[i] - pos)
                     if dist < 2 * conf.ant_radius:  # collision with an existing ant
                         pos = np.random.rand(2) * conf.field_size
                         valid = False
@@ -195,7 +196,7 @@ class Engine:
 
 
 @njit
-def _euclid_dist(vec):
+def euclid_dist(vec):
     return (vec[0] ** 2 + vec[1] ** 2) ** .5
 
 
@@ -208,7 +209,7 @@ def _collision_calc(pos):
     for i in range(conf.ant_amount):
         for k in range(i + 1, conf.ant_amount):
             if not already_calculated[k]:
-                dist = _euclid_dist(pos[k] - pos[i])
+                dist = euclid_dist(pos[k] - pos[i])
                 if dist < 2 * conf.ant_radius:
                     already_calculated[k] = True
                     collisions[coll_count] = np.array([i, k])
@@ -217,6 +218,6 @@ def _collision_calc(pos):
 
 
 # call njit compiler
-_euclid_dist(np.zeros(2))
+euclid_dist(np.zeros(2))
 _collision_calc(np.full((conf.ant_amount, 2), np.nan, dtype='float64'))
 

@@ -43,7 +43,6 @@ class ScaleFieldWindow:
             self._debug_labels._player_number = player_idx
 
     def on_key_release(self, symbol, modifiers):
-        print(symbol)
         if symbol == 102:  # 102 == symbol for 'f'
             self._window.set_fullscreen(fullscreen=not self._window.fullscreen)
 

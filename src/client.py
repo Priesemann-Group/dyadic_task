@@ -37,7 +37,8 @@ class UdpClient(DatagramProtocol):
                       on_motion=self._send_pos,
                       on_close=self._close_from_ui_thread,
                       on_player_ready=self._start_communication,
-                      wasd_ctrl='keyboard' in sys.argv)
+                      wasd_ctrl='keyboard' in sys.argv,
+                      caped_mouse='caped_mouse' in sys.argv)
 
         #reactor.listenUDP(0, self)
         #Thread(target=reactor.run,
@@ -60,15 +61,12 @@ class UdpClient(DatagramProtocol):
 
     def datagramReceived(self, datagram, address):
         packet = pickle.loads(datagram)
-        print(type(packet))
         if isinstance(packet, numpy.ndarray):
             self._rec_packets.put(packet)
         elif isinstance(packet, bytes):
             self._process_msg(msg=packet.decode())
         elif isinstance(packet, float):
             self._next_round_start = packet
-            print(self._next_round_start)
-            print(time.time())
 
     def connectionRefused(self):
         print("Connection Refused.")
@@ -88,7 +86,6 @@ class UdpClient(DatagramProtocol):
         if msg == 'ping request answer':
             self._ping = (time.time() - self._ping_request_start) * 1000  # in milliseconds
             self._ping_request_start = -1.
-            print(f'ping:{self._ping}')
         elif msg == 'Server is full.' \
                 or msg == 'Timeout due to inactivity.' \
                 or msg == 'Recording session ended successfully':

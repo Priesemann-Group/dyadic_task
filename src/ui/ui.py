@@ -9,11 +9,12 @@ from pyglet import app
 from ui.sounds import OccupationSoundPlayer
 from ui.elements import TargetIndicator, Pointer, PopUpLabel, Ant, Curtain
 from ui.window import ScaleFieldWindow
-from ui.wasd_controller import WasdController, KeyController
+from ui.wasd_controller import WasdController, KeyController, CapedMouseControl
 
 
 class UI:
-    def __init__(self, debug_overlay, on_motion, on_close, on_player_ready, replay=False, wasd_ctrl=False):
+    def __init__(self, debug_overlay, on_motion, on_close, on_player_ready,
+                 replay=False, wasd_ctrl=False, caped_mouse=False):
         self._on_motion_func = None
         self._player_ready = False
         self._set_on_motion_func(on_motion)
@@ -37,6 +38,7 @@ class UI:
         #self._curtain = Curtain(self._batch, self._bg_group)
         self._player_circles = []
         self._target_indicators = []
+        self._prediction_indicator = None
         self._score_popup_labels = []
         self._occupation_sound_player = []
         self._init_ui_elements()
@@ -49,15 +51,20 @@ class UI:
         self._win.event(self.on_draw)
         if wasd_ctrl:
             self._input_controller = WasdController(event_decorator=self._win.event,
-                                                    on_motion=self._on_motion_func,
+                                                    on_motion=lambda x:
+                                                    self._on_motion_func(self._win.to_win_coordinates(x)),
                                                     on_space_pressed=self._set_ready)
         else:
             self._input_controller = KeyController(event_decorator=self._win.event,
                                                    on_space_pressed=self._set_ready)
-            self._win.event(self.on_mouse_motion)
+            if caped_mouse:
+                _ = CapedMouseControl(event_decorator=self._win.event,
+                                      on_motion=self._on_motion_func)
+            else:
+                self._win.event(self.on_mouse_motion)
 
     def set_values(self, pings, player_0_pos, player_1_pos, target_states,
-                   score_states, scores, ant_pos, ant_kinds):
+                   score_states, scores, ant_pos, ant_kinds, prediction=None):
         self._win.set_scores_and_pings(scores, pings, score_states)
         self._player_circles[0].place(tuple(self._win.to_win_coordinates(player_0_pos)), self._win.get_scale_factor())
         self._player_circles[1].place(tuple(self._win.to_win_coordinates(player_1_pos)), self._win.get_scale_factor())
@@ -68,6 +75,8 @@ class UI:
         self._set_score_states(score_states, target_states)
         for popup in self._score_popup_labels:
             popup.adapt_size(self._win.get_scale_factor())
+        if prediction is not None:
+            self._prediction_indicator.set_on_target(self._ants[prediction], progress=1, player_idx=2)
 
     def set_start_time(self, start_time):
         time_until_start = (start_time - time.time())
@@ -99,7 +108,8 @@ class UI:
 
     def on_mouse_motion(self, x, y, dx, dy):  # Calls clients function to send position to server
         if self._on_motion_func is not None and self._player_ready:
-            self._on_motion_func(tuple(self._win.to_win_coordinates((x, y), reverse=True)))
+            #self._on_motion_func(tuple(self._win.to_win_coordinates((x, y), reverse=True)))
+            self._on_motion_func((x, y))
 
     def set_player_idx(self, player_idx):
         self._player_idx = player_idx
@@ -110,8 +120,6 @@ class UI:
         if self._on_player_ready is not None:
             self._on_player_ready()
         self._win.hide_curtain()
-        #self._win.set_countdown('Waiting for other participants...')
-        #self._curtain.hide()
 
     def _init_ui_elements(self):
         for i in [0, 1]:
@@ -126,6 +134,9 @@ class UI:
             self._target_indicators.append(TargetIndicator(marker_group=marker_group,
                                                            batch=self._batch,
                                                            group=self._target_group))
+            self._prediction_indicator = TargetIndicator(marker_group=marker_group,  # TODO
+                                                         batch=self._batch,
+                                                         group=self._target_group)
             self._score_popup_labels.append(PopUpLabel(color=(*player_color, 255),
                                                        group=player_group,
                                                        batch=self._batch))
@@ -134,7 +145,7 @@ class UI:
     def _set_on_motion_func(self, on_motion):
         def on_m(*arg):
             if self._player_ready:
-                on_motion(*arg)
+                on_motion(self._win.to_win_coordinates(*arg, reverse=True))
         self._on_motion_func = on_m
 
     def _generate_ants(self):

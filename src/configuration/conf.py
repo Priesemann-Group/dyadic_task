@@ -15,8 +15,8 @@ time_before_round = 5
 pos_updates_ps = 60
 #lap_time = 20  # for mouse control
 lap_time = 5 * 60
-simultaneous_games = 2
-laps_to_play = 3
+simultaneous_games = 1
+laps_to_play = 1
 
 update_amount = pos_updates_ps * lap_time
 
@@ -25,17 +25,21 @@ update_amount = pos_updates_ps * lap_time
 #wasd_speed = 8  # for moving dots
 #wasd_speed = 16
 wasd_speed = 10
-wasd_diag_speed = wasd_speed/int((wasd_speed**2+wasd_speed**2)**.5)*wasd_speed
+#wasd_diag_speed = wasd_speed/int((wasd_speed**2+wasd_speed**2)**.5)*wasd_speed
+wasd_diag_speed = (wasd_speed**2/2)**.5
 wasd_update_rate = 1/60
+speed = wasd_speed / wasd_update_rate  # todo rename?
 
 # Appearance
 font_name = 'Arial'
 font_size = 20
+reward_label_size = 20
 countdown_font_size = 64
 popup_font_size = 42
 #score_chart_max_score = 1./time_to_occupy * lap_time * 8 * 1/2  # 8 is the average reward for cooperation, 1/3 is random
-score_chart_max_score = 1./time_to_occupy * lap_time * 8 #* 1/3  # 8 is the average reward for cooperation, 1/3 is random
-player_radius = 10
+score_chart_max_score = 1./time_to_occupy * lap_time * 8 / 8 # * 1/8  # 8 is the average reward for cooperation, 1/3 is random
+#player_radius = 10
+player_radius = 20
 target_opacity = 255
 popup_height = 64
 
@@ -58,13 +62,20 @@ player_colors = [
 competitive_reward_color = (100, 100, 100)
 ant_base_color = (200, 200, 200)  # TODO rename
 
+prediction_color = (255, 0, 255)
+
 # Sound
 player_volumes = [1., .4]
 
 
-# Server configs
+# Replay config
+secs_jumps = 10
+
+
+# Server config
 #field_size = (1920, 1080)
-field_size = (1820, 1080)
+field_size = (1820, 1080)  # TODO change this back
+# 910 540
 score_chart_width = 100  # field_size[0] + score_chart_width = 1920
 server_ip = '134.76.24.227'
 server_port = 8767
