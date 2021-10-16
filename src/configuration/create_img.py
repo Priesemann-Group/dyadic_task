@@ -53,7 +53,7 @@ for i in range(1, 4):
     draw_shared_circ(i/16.)
 for i in range(13, 16):
     draw_shared_circ(i/16.)
-for i in range(5, 8):
+for i in range(4, 7):
     draw_shared_circ(i/16., col_0=conf.competitive_reward_color, col_1=conf.ant_base_color)
 
 name_index = 0
@@ -70,7 +70,7 @@ for i in range(13, 16):
                      col_1=conf.player_colors[1],
                      col_border=conf.dyadic_border_black,
                      img_folder=paths.dyadic_image_folder)
-for i in range(5, 8):
+for i in range(4, 7):
     draw_shared_circ(i/16.,
                      col_0=conf.competitive_reward_color,
                      col_1=conf.ant_base_color,

@@ -9,9 +9,9 @@ class AntKind(IntEnum):
     SHARED_13 = 3
     SHARED_14 = 4
     SHARED_15 = 5
-    COMPETITIVE_5 = 6
-    COMPETITIVE_6 = 7
-    COMPETITIVE_7 = 8
+    COMPETITIVE_4 = 6
+    COMPETITIVE_5 = 7
+    COMPETITIVE_6 = 8
 
 
 def ant_from_same_category(ant_kind):
@@ -40,10 +40,10 @@ def get_score(kind):
         return 14, 2
     elif kind == AntKind.SHARED_15:
         return 15, 1
+    elif kind == AntKind.COMPETITIVE_4:
+        return 4
     elif kind == AntKind.COMPETITIVE_5:
         return 5
     elif kind == AntKind.COMPETITIVE_6:
         return 6
-    elif kind == AntKind.COMPETITIVE_7:
-        return 7
 

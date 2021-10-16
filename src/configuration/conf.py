@@ -4,10 +4,13 @@ ant_radius = 50
 #velocity = 3
 #velocity = 2
 velocity = 1.5
-time_to_occupy = .5
-#time_to_occupy = 1
+#time_to_occupy = .5
+time_to_occupy = 1
 occupied_animation_time = .3  # should be < time_to_occupy
 ant_movement = True
+ant_disappearance = True
+
+ant_lifetime = 5
 
 #time_before_round = 2
 time_before_round = 5

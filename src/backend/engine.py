@@ -10,9 +10,11 @@ import backend.ant_kind as ant_kind
 
 class Engine:
     def __init__(self):
+        self._started = False
         self._pos = np.full((conf.ant_amount, 2), np.nan, dtype='float64')
         self._vel = np.full((conf.ant_amount, 2), np.nan, dtype='float64')
         self._kinds = []
+        self._respawn_times = [0] * conf.ant_amount  # will be overwritten
 
         self._spawn_ants()
 
@@ -127,11 +129,27 @@ class Engine:
         return np.array(self._kinds, dtype='float64')
 
     def _update(self):
+        self._on_first_update()
         if conf.ant_movement:
             self._pos += self._vel
+        if conf.ant_disappearance:
+            self._check_lifetimes()
         self._collisions()
         self._correct_to_boundaries()
         self._update_animations()
+
+    def _on_first_update(self):
+        if not self._started:
+            self._started = True
+            t = time.time()
+            self._respawn_times = [conf.ant_lifetime * i / conf.ant_amount + t for i in range(conf.ant_amount)]
+
+    def _check_lifetimes(self):
+        t = time.time()
+        for ant_idx, respawn_time in enumerate(self._respawn_times):
+            if t > respawn_time:
+                self._respawn_times[ant_idx] = t + conf.ant_lifetime
+                self._replace_ant(ant_idx)
 
     def _collisions(self):
         colls = _collision_calc(self._pos)
@@ -179,6 +197,7 @@ class Engine:
         self._pos[ant_idx] = self._get_free_ant_pos()
         self._vel[ant_idx] = np.array([np.cos(angle), np.sin(angle)]) * conf.velocity
         self._kinds[ant_idx] = ant_kind.ant_from_same_category(self._kinds[ant_idx])
+        self._respawn_times[ant_idx] = time.time() + conf.ant_lifetime
 
     def _get_free_ant_pos(self):
         pos = np.random.rand(2) * conf.field_size
@@ -201,7 +220,7 @@ def euclid_dist(vec):
 
 
 @njit
-def _collision_calc(pos):
+def _collision_calc(pos):  # TODO triple collisions in the same frame are note detected
     coll_count = 0
     collisions = np.array([[-1, -1]] * conf.ant_amount)
     already_calculated = [False] * conf.ant_amount
