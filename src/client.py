@@ -38,7 +38,8 @@ class UdpClient(DatagramProtocol):
                       on_close=self._close_from_ui_thread,
                       on_player_ready=self._start_communication,
                       wasd_ctrl='keyboard' in sys.argv,
-                      caped_mouse='caped_mouse' in sys.argv)
+                      capped_mouse='capped_mouse' in sys.argv,
+                      inverted_mouse='inverted_mouse' in sys.argv)
 
         #reactor.listenUDP(0, self)
         #Thread(target=reactor.run,
@@ -99,6 +100,7 @@ class UdpClient(DatagramProtocol):
         reactor.callLater(.2, self._check_if_ui_exits)
 
     def _send_pos(self, pos):
+        print(len(pos))
         self._send((*pos, int(self._ping), self._ui.get_scale_factor()))
 
     def _request_ping(self, dx):

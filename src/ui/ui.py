@@ -1,5 +1,6 @@
 import time
 
+import numpy
 import numpy as np
 
 from configuration import conf as c
@@ -14,10 +15,10 @@ from ui.wasd_controller import WasdController, KeyController, CapedMouseControl
 
 class UI:
     def __init__(self, debug_overlay, on_motion, on_close, on_player_ready,
-                 replay=False, wasd_ctrl=False, caped_mouse=False):
+                 replay=False, wasd_ctrl=False, capped_mouse=False, inverted_mouse=False):
         self._on_motion_func = None
         self._player_ready = False
-        self._set_on_motion_func(on_motion)
+        self._set_on_motion_func(on_motion, inverted_mouse)
         self._on_close_func = on_close
         self._on_player_ready = on_player_ready
 
@@ -57,7 +58,7 @@ class UI:
         else:
             self._input_controller = KeyController(event_decorator=self._win.event,
                                                    on_space_pressed=self._set_ready)
-            if caped_mouse:
+            if capped_mouse:
                 _ = CapedMouseControl(event_decorator=self._win.event,
                                       on_motion=self._on_motion_func)
             else:
@@ -142,10 +143,16 @@ class UI:
                                                        batch=self._batch))
             self._occupation_sound_player.append(OccupationSoundPlayer(c.player_volumes[i]))
 
-    def _set_on_motion_func(self, on_motion):
+    def _set_on_motion_func(self, on_motion, inverted_mouse):
         def on_m(*arg):
             if self._player_ready:
-                on_motion(self._win.to_win_coordinates(*arg, reverse=True))
+                pos = arg[0]
+                if inverted_mouse:
+                    field_range = numpy.array(c.field_size)
+                    field_pos = self._win.to_win_coordinates(pos, reverse=True)
+                    on_motion((field_pos - field_range) * -1)
+                else:
+                    on_motion(self._win.to_win_coordinates(pos, reverse=True))
         self._on_motion_func = on_m
 
     def _generate_ants(self):
