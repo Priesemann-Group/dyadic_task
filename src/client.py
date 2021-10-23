@@ -100,7 +100,6 @@ class UdpClient(DatagramProtocol):
         reactor.callLater(.2, self._check_if_ui_exits)
 
     def _send_pos(self, pos):
-        print(len(pos))
         self._send((*pos, int(self._ping), self._ui.get_scale_factor()))
 
     def _request_ping(self, dx):

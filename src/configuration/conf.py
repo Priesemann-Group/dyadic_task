@@ -1,23 +1,35 @@
 # Game config
-ant_amount = 6
-ant_radius = 50
+#ant_amount = 6
+coop_reward = 16
+coop_split = 1/8
+comp_reward = 16
+
+#from backend.ant_kind import AntKind
+
+#ant_kinds = [AntKind.SHARED_2,
+#             AntKind.SHARED_14,
+#             AntKind.COMPETITIVE_5]
+ant_kinds = [1, 4, 7]
+
+ant_amount = len(ant_kinds)
+ant_radius = 70
 #velocity = 3
 #velocity = 2
 velocity = 1.5
 #time_to_occupy = .5
 time_to_occupy = 1
 occupied_animation_time = .3  # should be < time_to_occupy
-ant_movement = True
-ant_disappearance = True
+ant_movement = False
 
+ant_disappearance = False
 ant_lifetime = 5
 
 #time_before_round = 2
 time_before_round = 5
 
 pos_updates_ps = 60
-#lap_time = 20  # for mouse control
-lap_time = 5 * 60
+#lap_time = 5 * 60
+lap_time = 1 * 60
 simultaneous_games = 1
 laps_to_play = 1
 
@@ -40,7 +52,8 @@ reward_label_size = 20
 countdown_font_size = 64
 popup_font_size = 42
 #score_chart_max_score = 1./time_to_occupy * lap_time * 8 * 1/2  # 8 is the average reward for cooperation, 1/3 is random
-score_chart_max_score = 1./time_to_occupy * lap_time * 8 / 8 # * 1/8  # 8 is the average reward for cooperation, 1/3 is random
+#score_chart_max_score = 1./time_to_occupy * lap_time * 8 / 8 # * 1/8  # 8 is the average reward for cooperation, 1/3 is random
+score_chart_max_score = -1 # disabled
 #player_radius = 10
 player_radius = 20
 target_opacity = 255

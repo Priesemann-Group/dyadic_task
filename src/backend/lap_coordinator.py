@@ -48,7 +48,9 @@ class LapCoordinator:
 
     def _run(self):
         output_folder = data_depositor.create_parallel_game_folder()
-        summed_scores = [0] * conf.simultaneous_games * 2
+        p_amount = conf.simultaneous_games * 2
+        summed_scores = [0 for _ in range(p_amount)]
+        laps_won = [0 for _ in range(p_amount)]
         for lap, lc in enumerate(lap_constellations()):
             if lap >= conf.laps_to_play:
                 break
@@ -63,9 +65,15 @@ class LapCoordinator:
                 p0_score, p1_score = match.get_score()
                 summed_scores[match.p0_idx] += p0_score
                 summed_scores[match.p1_idx] += p1_score
+                if p0_score > p1_score:
+                    laps_won[match.p0_idx] += 1
+                else:
+                    laps_won[match.p1_idx] += 1
             self._matches = []
-        for i in range(len(summed_scores)):
-            print(f'player {i}\'s score: {summed_scores[i]}')
+        for p in range(p_amount):
+            print(f'player {p}\'s summed score: {summed_scores[p]}')
+        for p in range(p_amount):
+            print(f'player {p} won {laps_won[p]} laps')
         self._send_msg(b'Recording session ended successfully')
 
     def _run_lap(self):

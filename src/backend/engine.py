@@ -46,7 +46,7 @@ class Engine:
         self._pos = np.full((conf.ant_amount, 2), np.nan, dtype='float64')
         self._vel = np.full((conf.ant_amount, 2), np.nan, dtype='float64')
         # idx 0,1 coop_p1, idx 2,3 coop_p0, idx 4,5 comp
-        self._kinds = [0, 0, 3, 3, 6, 6]  # will be overridden
+        self._kinds = conf.ant_kinds
         for i in range(conf.ant_amount):
             self._replace_ant(i)
 

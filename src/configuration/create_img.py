@@ -1,5 +1,4 @@
 from PIL import Image, ImageDraw
-from backend.ant_kind import AntKind
 import os
 
 import conf
@@ -49,15 +48,16 @@ def draw_shared_circ(fraction,
     im.save(output_folder_path + f'/{img_folder}circ_{name_index}.png', quality=100)
     name_index += 1
 
-for kind in AntKind:
-    print(kind)
 
-for i in range(1, 4):
+_low_coop = int(conf.coop_reward * conf.coop_split)
+_high_coop = int(conf.coop_reward * (1 - conf.coop_split))
+
+for i in range(_low_coop - 1, _low_coop + 2):
     draw_shared_circ(i/16.)
-for i in range(13, 16):
+for i in range(_high_coop - 1, _high_coop + 2):
     draw_shared_circ(i/16.)
-for i in range(4, 7):
-    draw_shared_circ(i/16., col_0=conf.competitive_reward_color, col_1=conf.ant_base_color)
+for _ in range(conf.comp_reward - 1, conf.comp_reward + 2):
+    draw_shared_circ(1., col_0=conf.competitive_reward_color, col_1=conf.ant_base_color)
 
 name_index = 0
 
@@ -85,8 +85,6 @@ def create_target_indicators(black=conf.border_black, folder=paths.image_folder)
     for i in [0, 1]:  # Create target indicators
         draw.ellipse((0, 0, conf.ant_img_size, conf.ant_img_size),
                      fill=conf.player_colors[i])
-        #draw.ellipse((margin/2, margin/2, conf.ant_img_size - margin/2, conf.ant_img_size - margin/2),
-        #             fill=black)
         draw.ellipse((margin, margin, conf.ant_img_size - margin, conf.ant_img_size - margin),
                      fill=0)
         im.save(output_folder_path + f'/{folder}target_indicator_{i}.png', quality=100)

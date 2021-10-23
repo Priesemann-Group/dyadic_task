@@ -1,5 +1,9 @@
 from enum import IntEnum
 from random import randint
+import configuration.conf as conf
+
+_high_coop = int(conf.coop_reward * (1 - conf.coop_split))
+_low_coop = int(conf.coop_reward * conf.coop_split)
 
 
 class AntKind(IntEnum):
@@ -29,21 +33,21 @@ def is_shared(ant_kind):
 
 def get_score(kind):
     if kind == AntKind.SHARED_1:
-        return 1, 15
+        return _low_coop - 1, _high_coop + 1
     elif kind == AntKind.SHARED_2:
-        return 2, 14
+        return _low_coop, _high_coop
     elif kind == AntKind.SHARED_3:
-        return 3, 13
+        return _low_coop + 1, _high_coop - 1
     elif kind == AntKind.SHARED_13:
-        return 13, 3
+        return _high_coop + 1, _low_coop - 1
     elif kind == AntKind.SHARED_14:
-        return 14, 2
+        return _high_coop, _low_coop
     elif kind == AntKind.SHARED_15:
-        return 15, 1
+        return _high_coop - 1, _low_coop + 1
     elif kind == AntKind.COMPETITIVE_4:
-        return 4
+        return 16
     elif kind == AntKind.COMPETITIVE_5:
-        return 5
+        return 16
     elif kind == AntKind.COMPETITIVE_6:
-        return 6
+        return 16
 
