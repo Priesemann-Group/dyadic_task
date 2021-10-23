@@ -1,4 +1,5 @@
 from PIL import Image, ImageDraw
+from backend.ant_kind import AntKind
 import os
 
 import conf
@@ -48,6 +49,8 @@ def draw_shared_circ(fraction,
     im.save(output_folder_path + f'/{img_folder}circ_{name_index}.png', quality=100)
     name_index += 1
 
+for kind in AntKind:
+    print(kind)
 
 for i in range(1, 4):
     draw_shared_circ(i/16.)
