@@ -1,3 +1,5 @@
+import pkg_resources
+pkg_resources.require('tables==3.6.1')
 import tables
 import os
 from datetime import datetime
