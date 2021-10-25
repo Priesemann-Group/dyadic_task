@@ -8,7 +8,7 @@ pkg_resources.require('numpy==1.20.3')
 #ant_amount = 6
 coop_reward = 16
 coop_split = 1/8
-comp_reward = 16
+comp_reward = 12
 
 #from backend.ant_kind import AntKind
 
@@ -34,10 +34,9 @@ ant_lifetime = 5
 time_before_round = 5
 
 pos_updates_ps = 60
-#lap_time = 5 * 60
-lap_time = 1 * 60
-simultaneous_games = 1
-laps_to_play = 1
+lap_time = 5 * 60
+simultaneous_games = 2
+laps_to_play = 3
 
 update_amount = pos_updates_ps * lap_time
 

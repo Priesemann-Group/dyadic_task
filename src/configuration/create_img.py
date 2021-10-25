@@ -56,8 +56,8 @@ for i in range(_low_coop - 1, _low_coop + 2):
     draw_shared_circ(i/16.)
 for i in range(_high_coop - 1, _high_coop + 2):
     draw_shared_circ(i/16.)
-for _ in range(conf.comp_reward - 1, conf.comp_reward + 2):
-    draw_shared_circ(1., col_0=conf.competitive_reward_color, col_1=conf.ant_base_color)
+for i in range(conf.comp_reward - 1, conf.comp_reward + 2):
+    draw_shared_circ(i/16., col_0=conf.competitive_reward_color, col_1=conf.ant_base_color)
 
 name_index = 0
 

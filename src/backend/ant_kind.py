@@ -45,9 +45,9 @@ def get_score(kind):
     elif kind == AntKind.SHARED_15:
         return _high_coop - 1, _low_coop + 1
     elif kind == AntKind.COMPETITIVE_4:
-        return 16
+        return conf.comp_reward - 1
     elif kind == AntKind.COMPETITIVE_5:
-        return 16
+        return conf.comp_reward
     elif kind == AntKind.COMPETITIVE_6:
-        return 16
+        return conf.comp_reward + 1
 
