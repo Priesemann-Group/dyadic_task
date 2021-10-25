@@ -1,8 +1,8 @@
 import pkg_resources
-pkg_resources.require('Twisted==21.7.0')
+#pkg_resources.require('Twisted==21.7.0')
 pkg_resources.require('pyglet==1.5.16')
-pkg_resources.require('numba==0.53.1')
-pkg_resources.require('numpy==1.20.3')
+#pkg_resources.require('numba==0.53.1')
+#pkg_resources.require('numpy==1.20.3')
 
 # Game config
 #ant_amount = 6
