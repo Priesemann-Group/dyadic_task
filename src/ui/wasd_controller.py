@@ -16,29 +16,30 @@ class KeyController:
             self._on_space_pressed()
 
 
-class CapedMouseControl:
-    def __init__(self, event_decorator, on_motion):
-        self._mouse_pos = numpy.array(conf.field_size)/2
+class CappedMouseControl:
+    def __init__(self, event_decorator, on_motion, to_win_coordinates):
+        #self._mouse_pos = numpy.array(conf.field_size)/2
+        self._mouse_pos = None
         self._pos = numpy.array(conf.field_size)/2
-        print(f'position: {self._pos}')
         self._vel = numpy.array([0, 0])
         self._on_motion = on_motion
+        self._to_win_coordinates = to_win_coordinates
         event_decorator(self.on_mouse_motion)
         clock.schedule_interval(self._tick, conf.wasd_update_rate)
 
     def on_mouse_motion(self, x, y, dx, dy):
-        self._mouse_pos[0] = x
-        self._mouse_pos[1] = y
+        self._mouse_pos = numpy.array([x, y])
 
     def _tick(self, dx):
-        vec_to_mouse = self._mouse_pos - self._pos
-        dist_to_mouse = euclid_dist(vec_to_mouse)
-        if dist_to_mouse > conf.wasd_speed:
-            self._vel = vec_to_mouse/dist_to_mouse*conf.wasd_speed
-        else:
-            self._vel = vec_to_mouse
-        self._pos += self._vel
-        self._on_motion(tuple(self._pos))
+        if self._mouse_pos is not None:
+            vec_to_mouse = self._to_win_coordinates(self._mouse_pos, reverse=True) - self._pos
+            dist_to_mouse = euclid_dist(vec_to_mouse)
+            if dist_to_mouse > conf.wasd_speed:
+                self._vel = vec_to_mouse/dist_to_mouse*conf.wasd_speed
+            else:
+                self._vel = vec_to_mouse
+            self._pos += self._vel
+            self._on_motion(self._to_win_coordinates(tuple(self._pos)))
 
 
 class WasdController(KeyController):

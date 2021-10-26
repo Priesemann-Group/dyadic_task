@@ -35,8 +35,8 @@ time_before_round = 5
 
 pos_updates_ps = 60
 lap_time = 2 * 60
-simultaneous_games = 2
-laps_to_play = 3
+simultaneous_games = 1
+laps_to_play = 1
 
 update_amount = pos_updates_ps * lap_time
 

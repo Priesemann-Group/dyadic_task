@@ -10,7 +10,7 @@ from pyglet import app
 from ui.sounds import OccupationSoundPlayer
 from ui.elements import TargetIndicator, Pointer, PopUpLabel, Ant, Curtain
 from ui.window import ScaleFieldWindow
-from ui.wasd_controller import WasdController, KeyController, CapedMouseControl
+from ui.wasd_controller import WasdController, KeyController, CappedMouseControl
 
 
 class UI:
@@ -59,8 +59,10 @@ class UI:
             self._input_controller = KeyController(event_decorator=self._win.event,
                                                    on_space_pressed=self._set_ready)
             if capped_mouse:
-                _ = CapedMouseControl(event_decorator=self._win.event,
-                                      on_motion=self._on_motion_func)
+                _ = CappedMouseControl(event_decorator=self._win.event,
+                                       on_motion=self._on_motion_func,
+                                       #win_to_field=lambda x: self._win.to_win_coordinates(x, reverse=False))
+                                       to_win_coordinates=self._win.to_win_coordinates)
             else:
                 self._win.event(self.on_mouse_motion)
 
