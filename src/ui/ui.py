@@ -150,12 +150,12 @@ class UI:
             if self._player_ready:
                 pos = arg[0]
                 if inverted_mouse:
-                    pos = numpy.array(pos)
+                    pos = numpy.array(self._win.to_win_coordinates(pos, reverse=True))
                     pos[0] -= c.field_size[0]
                     pos[0] *= -1
                     #field_pos = self._win.to_win_coordinates(pos, reverse=True)
                     #on_motion((field_pos - field_range) * -1)
-                    on_motion(self._win.to_win_coordinates(pos, reverse=True))
+                    on_motion(pos)
                 else:
                     on_motion(self._win.to_win_coordinates(pos, reverse=True))
         self._on_motion_func = on_m
